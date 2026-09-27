@@ -85,9 +85,9 @@ W.sw=(el,cfg)=>{
 };
 
 W.tone=el=>{
-  const O=[["Tasto (دافي)",{cut:1000}],["عادي",{cut:2600}],["Ponticello (حاد)",{cut:8000}],["عادي + Vibrato",{cut:2600,vib:1}]];
+  const O=[["Tasto (دافي)",{cut:1300}],["عادي",{}],["Ponticello (حاد)",{bright:1}],["عادي + Vibrato",{vib:1}]];
   el.innerHTML=`<div class="pats" style="justify-content:center">${O.map((o,i)=>`<button class="chip" data-i="${i}">▶ ${o[0]}</button>`).join("")}</div><p class="cap">نفس النغمتين بالزبط. بس مكان الضربة وهزّة الإصبع بيغيّروا اللون.</p>`;
-  el.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const o=O[+b.dataset.i][1];pluck(mf(69),0,2.4,.55,o);pluck(mf(67),1.1,2.4,.55,o)};
+  el.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const o=O[+b.dataset.i][1];loadSamples();playMidi(69,0,.55,o);playMidi(67,1.1,.55,o)};
 };
 
 W.diag=el=>{

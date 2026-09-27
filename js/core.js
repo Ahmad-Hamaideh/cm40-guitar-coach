@@ -41,10 +41,12 @@ function pluck(freq,when=0,dur=2.2,vol=.5,o={}){
   if(o.vib){const l=c.createOscillator(),lg=c.createGain();l.frequency.value=5.5;lg.gain.value=.012;l.connect(lg).connect(src.playbackRate);l.start(t0+.25);l.stop(t0+dur)}
   src.start(t0);
 }
-const playSF=(s,f,vol=.5)=>pluck(mf(OPEN_MIDI[s-1]+f),0,1.8,vol);
-function strum(c,dir="D",vol=.28){
+// sampler.js swaps this for real nylon-guitar samples once they load
+let playMidi=(m,when=0,vol=.5,o={})=>pluck(mf(m),when,o.dur||1.8,vol,o);
+const playSF=(s,f,vol=.5)=>playMidi(OPEN_MIDI[s-1]+f,0,vol);
+function strum(c,dir="D",vol=.28,when=0){
   const idx=dir==="D"?[0,1,2,3,4,5]:[5,4,3,2];let k=0;
-  idx.forEach(i=>{const f=c.f[i];if(f>=0)pluck(mf(OPEN_MIDI[5-i]+f),k++*(dir==="D"?.014:.01),1.8,dir==="D"?vol:vol*.6)});
+  idx.forEach(i=>{const f=c.f[i];if(f>=0)playMidi(OPEN_MIDI[5-i]+f,when+k++*(dir==="D"?.014:.01),dir==="D"?vol:vol*.6)});
 }
 function click(t,accent){const c=ac(),o=c.createOscillator(),g=c.createGain();o.frequency.value=accent?1500:1000;g.gain.setValueAtTime(.35,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.06)}
 const STOP=new Set();const stopAll=()=>STOP.forEach(f=>f());

@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="description" content="دورة جيتار كلاسيك من الصفر للاحتراف على Yamaha CM40: 40 درس بالرسومات ومدرّب بيعزف قدّامك.">
 <title>مدرّب CM40</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -191,47 +194,75 @@ footer{color:var(--muted);font-size:.88rem;margin-top:24px;line-height:2}
   .chwrap svg{max-width:130px;margin-inline:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* v2: pages, top bar, guitar stage */
+.top{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.topin{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:"Reem Kufi","IBM Plex Sans Arabic",sans-serif;font-size:1.35rem;font-weight:700;color:var(--ink);text-decoration:none}
+.top nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.top nav a{color:var(--ink);text-decoration:none;padding:5px 12px;border-radius:20px;font-size:.95rem}
+.top nav a.on{background:var(--soft);font-weight:600}
+#tools{max-width:1180px;margin:14px auto 0;padding-inline:16px}
+#tools .tools{margin-top:0}
+.etune{margin-top:12px}.etune summary{cursor:pointer}.etune .strings{margin-top:10px}
+.btn.big{padding:12px 22px;font-size:1.05rem;text-decoration:none;display:inline-block}
+a.btn{text-decoration:none}
+.hero{grid-template-columns:1fr}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:8px}
+.ucard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:6px;align-content:start}
+.ucard .tag{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:.85rem;font-weight:600}
+.ucard ol{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:1px}
+.ucard li a{display:grid;grid-template-columns:2.2ch 10px 1fr auto;gap:10px;align-items:baseline;padding:6px 8px;border-radius:8px;color:var(--ink);text-decoration:none;line-height:1.45}
+.ucard li a:hover{background:var(--soft)}
+.ucard li i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--muted);transform:translateY(1px)}
+.ucard li.done i{background:var(--good);border-color:var(--good)}
+.ucard .n{color:var(--muted);font-size:.85rem}
+.crumb{display:flex;gap:8px;color:var(--muted);font-size:.9rem;margin-bottom:12px;flex-wrap:wrap}
+.lesson h2{font-size:1.6rem}
+.lnav{display:flex;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap}
+.lnav a{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--ink);background:var(--card)}
+.lnav a:hover{border-color:var(--accent)}
+.lnav a small{display:block;color:var(--muted)}
+.lnav a.nx{text-align:left}
+.gvh .gcams{margin-bottom:8px}
+.gstage{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;background:#1E1A16;border-radius:12px;padding:10px;overflow:hidden}
+.gstage svg{display:block;width:100%;height:auto;min-width:0}
+.gstage .grhv{display:none}
+.gstage.zoom{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);align-items:center}
+.gstage.zoom .grhv{display:block;max-height:260px}
+.chead{min-height:2.4rem;margin-top:4px}
+.cturn{background:var(--warn);color:var(--dot-ink);font-weight:700;padding:2px 12px;border-radius:14px}
+.lane{cursor:pointer}
+.wmsg{min-height:1.6em;margin-top:8px}
+.wmsg.good{color:var(--good);font-weight:700}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mt{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.mtg{width:220px;max-width:100%}
+.mtr{display:grid;gap:2px;min-width:150px;text-align:center}
+.mtn{font-size:1.5rem}
+@media (max-width:700px){.gstage.zoom{grid-template-columns:minmax(0,1fr)}.gstage.zoom .grhv{max-height:170px}.gstage{padding:6px}.lesson h2{font-size:1.35rem}}
 </style>
-
 </head>
 <body>
-<div class="wrap" dir="rtl" lang="ar">
-  <header class="hero">
-    <div>
-      <div class="eyebrow">Yamaha CM40 · جيتار كلاسيك · أوتار نايلون</div>
-      <h1>من الصفر للاحتراف، درس درس</h1>
-      <p class="lead">٤٠ درس. بكل درس فيه عزف، المدرّب بيعزف قدّامك: بتشوف وين بتنزل كل إصبع، وأي وتر بيرن، وبتسمع الصوت. وبعدين بيسكت وبيعطيك دورك لتقلّده.</p>
-      <div class="overall"><span class="meta">الدروس اللي خلّصتها</span><div class="bar"><i id="allBar"></i></div><b class="mono" id="allPct">0/40</b></div>
-    </div>
-    <div><div class="meta">الطريق كامل</div><div class="road" id="road"></div></div>
-  </header>
-
-  <section class="tools" aria-label="أدوات">
-    <div class="tool">
-      <h3>الدوزان</h3>
-      <p class="hint">اضغط على الوتر، اسمع النغمة، وطابق صوت جيتارك معها.</p>
-      <div class="strings" id="strings"></div>
-      <div class="ctrl"><label class="meta"><input type="checkbox" id="loop"> كرّر النغمة</label></div>
-    </div>
-    <div class="tool">
-      <h3>مترونوم</h3>
-      <p class="hint">ابدأ بطيء، وزيد ٥ بس لما تعزف التمرين ٣ مرات نظيف ورا بعض.</p>
-      <div class="row"><span class="bpm" id="bpmV">60</span><input type="range" id="bpm" min="40" max="200" value="60" aria-label="السرعة"></div>
-      <div class="ctrl"><button class="btn" id="metBtn">شغّل</button><button class="btn ghost" id="minus">−5</button><button class="btn ghost" id="plus">+5</button><div class="beats" id="beats"><span></span><span></span><span></span><span></span></div></div>
-    </div>
-  </section>
-
-  <div class="main">
-    <details class="side" id="side" open><summary>فهرس الدروس</summary><nav class="nav" id="nav"></nav></details>
-    <div id="content"></div>
-  </div>
-</div>
-<script>window.addEventListener("error",function(e){var d=document.getElementById("content");if(d)d.insertAdjacentHTML("afterbegin","<p style=\"color:#B4432F;font-weight:700\">صار خطأ بالصفحة: "+(e.message||"")+"</p>")});</script>
+<header class="top"><div class="topin"><a class="brand" href="#/">مدرّب CM40</a>
+<nav id="topnav"><a href="#/">الدروس</a><a href="#/help">عيادة المشاكل</a><button class="chip" id="toolsBtn" aria-expanded="false">الدوزان والمترونوم</button></nav></div></header>
+<section id="tools" hidden aria-label="أدوات"><div class="tools">
+  <div class="tool"><h3>الدوزان بالمايك</h3><p class="hint">اعزف وتر واحد، والإبرة بتقلّك إذا بدّه شد أو رخي.</p><div id="mtuner"></div>
+    <details class="etune"><summary class="meta">أو دوزن بالأذن</summary><div class="strings" id="strings"></div><div class="ctrl"><label class="meta"><input type="checkbox" id="loop"> كرّر النغمة</label></div></details></div>
+  <div class="tool"><h3>مترونوم</h3><p class="hint">ابدأ بطيء، وزيد ٥ بس لما تعزف التمرين ٣ مرات نظيف ورا بعض.</p>
+    <div class="row"><span class="bpm" id="bpmV">60</span><input type="range" id="bpm" min="40" max="200" value="60" aria-label="السرعة"></div>
+    <div class="ctrl"><button class="btn" id="metBtn">شغّل</button><button class="btn ghost" id="minus">−5</button><button class="btn ghost" id="plus">+5</button><div class="beats" id="beats"><span></span><span></span><span></span><span></span></div></div></div>
+</div></section>
+<div class="wrap"><main id="view"></main></div>
+<script>window.addEventListener("error",function(e){var d=document.getElementById("view");if(d)d.insertAdjacentHTML("afterbegin","<p style=\"color:#B4432F;font-weight:700\">صار خطأ بالصفحة: "+(e.message||"")+"</p>")});</script>
 <script src="js/core.js"></script>
+<script src="js/sampler.js"></script>
 <script src="js/svgs.js"></script>
 <script src="js/svgs2.js"></script>
 <script src="js/widgets.js"></script>
+<script src="js/mic.js"></script>
 <script src="js/coach.js"></script>
+<script src="js/guitar.js"></script>
+<script src="js/player.js"></script>
 <script src="js/data1.js"></script>
 <script src="js/data2.js"></script>
 <script src="js/app.js"></script>
