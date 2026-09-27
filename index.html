@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="دورة جيتار كلاسيك من الصفر للاحتراف على Yamaha CM40: 40 درس بالرسومات ومدرّب بيعزف قدّامك.">
+<title>مدرّب CM40</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#F1F3EE; --card:#FAFBF8; --ink:#1A1D1B; --muted:#5A645E; --line:#D5DAD2;
+  --accent:#2E5E4E; --accent-ink:#FFFFFF; --soft:#E1EAE4; --wood:#C9A36A; --wood-line:#8A6A3B; --dot:#1A1D1B; --dot-ink:#FAFBF8;
+  --good:#2E7D4F; --bad:#B4432F; --warn:#B7791F; --skin:#E8C9A8; --skin-line:#B08A66;
+  --f1:#2F7D6D; --f2:#3563B5; --f3:#8A4FB8; --f4:#C27C1A; --f-ink:#FFFFFF;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121513; --card:#1A1E1B; --ink:#E6EAE5; --muted:#9AA59E; --line:#2B322D;
+    --accent:#86C9AF; --accent-ink:#0F1512; --soft:#1F2C26; --wood:#5E4A2E; --wood-line:#9C7F52; --dot:#E6EAE5; --dot-ink:#121513;
+    --good:#7BCB98; --bad:#E58A76; --warn:#E0B060; --skin:#8C6E55; --skin-line:#C9A585;
+    --f1:#5CC0A8; --f2:#7FA2E8; --f3:#C09AE6; --f4:#E6A94E; --f-ink:#111;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121513; --card:#1A1E1B; --ink:#E6EAE5; --muted:#9AA59E; --line:#2B322D;
+  --accent:#86C9AF; --accent-ink:#0F1512; --soft:#1F2C26; --wood:#5E4A2E; --wood-line:#9C7F52; --dot:#E6EAE5; --dot-ink:#121513;
+  --good:#7BCB98; --bad:#E58A76; --warn:#E0B060; --skin:#8C6E55; --skin-line:#C9A585;
+  --f1:#5CC0A8; --f2:#7FA2E8; --f3:#C09AE6; --f4:#E6A94E; --f-ink:#111;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.75 "IBM Plex Sans Arabic",Tahoma,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:24px 64px}
+h1,h2,h3,h4{font-family:"Reem Kufi","IBM Plex Sans Arabic",sans-serif;line-height:1.3;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,6vw,3.3rem)} h2{font-size:1.7rem} h3{font-size:1.3rem}
+h4{font-size:1rem;color:var(--muted);font-weight:500;margin-bottom:6px}
+p{margin:0} a{color:var(--accent)}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.meta{color:var(--muted);font-size:.9rem}
+.k{font-family:"IBM Plex Mono",monospace;background:var(--soft);padding:1px 6px;border-radius:4px;font-size:.88em;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+svg text{font-family:"IBM Plex Sans Arabic","IBM Plex Mono",sans-serif}
+
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:center;padding-block:16px 32px}
+.eyebrow{font-size:.8rem;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.lead{font-size:1.1rem;color:var(--muted);margin-top:12px;max-width:54ch}
+.overall{margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bar{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;flex:1;min-width:140px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.road{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-top:8px}
+.road a{text-decoration:none;color:var(--ink);display:grid;gap:4px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:.82rem;line-height:1.35}
+.road a b{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:.75rem}
+.road .mini{height:3px;background:var(--line);border-radius:2px;overflow:hidden;align-self:end}
+.road .mini i{display:block;height:100%;background:var(--accent);width:0}
+
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.tool h3{font-size:1.1rem;margin-bottom:2px}
+.hint{color:var(--muted);font-size:.9rem;margin-bottom:10px}
+.strings{display:flex;gap:8px;flex-wrap:wrap;direction:ltr}
+.strings button{flex:1;min-width:52px;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 4px;display:grid;justify-items:center}
+.strings button b{font-family:"IBM Plex Mono",monospace;font-size:1.15rem}
+.strings button small{color:var(--muted);font-size:.7rem}
+.strings button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.strings button.on small{color:inherit}
+.row,.ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ctrl{margin-top:10px}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);padding:8px 16px;border-radius:8px;font-weight:500}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+.bpm{font-family:"IBM Plex Mono",monospace;font-size:1.9rem;font-weight:600;min-width:3ch;text-align:center}
+input[type=range]{flex:1;min-width:100px;accent-color:var(--accent);vertical-align:middle}
+.ctrl label{display:flex;align-items:center;gap:6px}
+.beats{display:flex;gap:6px;direction:ltr}
+.beats span{width:14px;height:14px;border-radius:50%;background:var(--soft)}
+.beats span.on{background:var(--accent)}
+
+.main{display:grid;grid-template-columns:240px 1fr;gap:40px;margin-top:40px;align-items:start}
+/* grid/flex children default to min-width:auto, so a wide tab lane would stretch the whole page */
+.main>*,.coach>*,.cols>*,.hero>*,.tools>*,.diag>*,.lesson,.fig{min-width:0}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow:auto}
+.side summary{display:none}
+.nav{display:grid;gap:14px;font-size:.9rem}
+.nav .u{font-weight:700;font-size:.8rem;letter-spacing:.04em;color:var(--muted);margin-bottom:2px}
+.nav a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--ink);padding:3px 6px;border-radius:6px;line-height:1.4}
+.nav a:hover{background:var(--soft)}
+.nav a i{flex:none;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--muted);transform:translateY(1px)}
+.nav a.done i{background:var(--good);border-color:var(--good)}
+
+.unit{margin-bottom:56px}
+.uh{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:24px;scroll-margin-top:12px}
+.uh .tag{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:.85rem;font-weight:600}
+.uh p{color:var(--muted);margin-top:4px;max-width:65ch}
+.lesson{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:22px;scroll-margin-top:12px}
+.lh{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.ln{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:600;font-size:.9rem}
+.lh .meta{margin-inline-start:auto}
+.goal{color:var(--muted);margin-bottom:16px;max-width:70ch}
+.goal b{color:var(--ink)}
+.fig{background:var(--paper);border-radius:10px;padding:14px;margin-bottom:18px;overflow-x:auto}
+.fig > svg{display:block;width:100%;height:auto;max-width:720px;margin-inline:auto}
+.cap{font-size:.85rem;color:var(--muted);text-align:center;margin-top:6px}
+.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:24px}
+ol.steps{margin:0;padding-inline-start:22px}
+ol.steps li{margin-bottom:6px}
+ul.mist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+ul.mist li{display:grid;gap:2px;font-size:.93rem;border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.x{color:var(--bad)} .ok{color:var(--good)}
+.trick{background:var(--soft);border-radius:8px;padding:12px 14px;margin-top:16px}
+.trick b{color:var(--accent)}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.vids{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.vids a{display:inline-flex;gap:6px;align-items:center;font-size:.85rem;text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:3px 12px 3px 10px;color:var(--ink)}
+.vids a:hover{border-color:var(--accent)}
+.vids svg{width:12px;height:12px;fill:var(--bad)}
+.done{display:flex;gap:8px;align-items:center;font-weight:500;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--line)}
+.done input{width:18px;height:18px;accent-color:var(--good);margin:0}
+.done:has(input:checked){background:var(--soft);border-color:var(--good);color:var(--good)}
+
+/* widgets */
+.tabwrap,.fbwrap{overflow-x:auto;direction:ltr}
+.tabwrap svg,.fbwrap svg{display:block;height:auto}
+.fbwrap svg{width:100%}
+.tabwrap text{font-family:"IBM Plex Mono",monospace}
+.tn{fill:var(--ink)} .tl{fill:var(--muted)}
+.hit{cursor:pointer}
+.readout{text-align:center;margin-top:8px;min-height:1.6em}
+.chords{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.chord{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 8px;display:grid;justify-items:center;align-content:start;gap:2px;text-align:center}
+.chord:hover{border-color:var(--accent)}
+.chord .nm{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:1.1rem}
+.chord .ar{font-size:.75rem;color:var(--muted)}
+.chord svg{width:100%;max-width:120px;height:auto}
+.chord .tp{font-size:.78rem;color:var(--muted);line-height:1.45}
+.chord.playing{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.pats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:4px 12px;font-size:.88rem}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.swview{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;direction:ltr}
+.swview svg{width:130px;height:auto}
+.swview .arr{font-size:1.6rem;color:var(--muted)}
+.swmsg{text-align:center;margin:8px auto 0;max-width:52ch}
+.timer{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.timer .big{font-size:2rem;font-weight:600;min-width:2.5ch;text-align:center}
+.qhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+.qhead .q{font-size:1.15rem}
+
+/* coach */
+.coach{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.chwrap svg{width:100%;height:auto;display:block}
+.ra{transition:transform .09s ease-out;transform-box:view-box;transform-origin:56px 96px}
+.hd{transition:transform .1s;transform-box:view-box}
+.hd.bob{transform:translateY(2px)}
+.chead{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:2px;min-height:2.4rem}
+.cnow{font-size:1.6rem}
+.fg{transition:transform .2s ease,opacity .2s}
+.barre{transition:opacity .2s}
+.str.vib{animation:vib .4s ease-out}
+@keyframes vib{0%{stroke:var(--accent);stroke-width:4px}100%{}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:2px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px;vertical-align:middle}
+.lane{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+
+.diag{display:grid;grid-template-columns:230px 1fr;gap:16px}
+.diag .opts{display:grid;gap:6px;align-content:start}
+.diag .opts button{text-align:start;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px}
+.diag .opts button.on{border-color:var(--accent);background:var(--soft)}
+.diag .out{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start}
+.flow .arr{color:var(--muted);padding-top:22px}
+.tablewrap{overflow-x:auto;margin-top:10px}
+table.plan{border-collapse:collapse;width:100%;min-width:440px}
+table.plan td,table.plan th{border-bottom:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+table.plan th{font-size:.8rem;color:var(--muted);font-weight:500}
+table.plan td.m{font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+footer{color:var(--muted);font-size:.88rem;margin-top:24px;line-height:2}
+
+@media (max-width:900px){
+  .hero,.tools,.cols,.diag{grid-template-columns:1fr}
+  .main{grid-template-columns:1fr;gap:20px}
+  .side{position:static;max-height:none;border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--card)}
+  .side summary{display:block;cursor:pointer;font-weight:600}
+  .nav{margin-top:10px}
+  .flow{grid-template-columns:1fr} .flow .arr{display:none}
+  .lesson{padding:16px}
+  .coach{grid-template-columns:1fr}
+  .chwrap svg{max-width:130px;margin-inline:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Yamaha CM40 · جيتار كلاسيك · أوتار نايلون</div>
+      <h1>من الصفر للاحتراف، درس درس</h1>
+      <p class="lead">٤٠ درس. بكل درس فيه عزف، المدرّب بيعزف قدّامك: بتشوف وين بتنزل كل إصبع، وأي وتر بيرن، وبتسمع الصوت. وبعدين بيسكت وبيعطيك دورك لتقلّده.</p>
+      <div class="overall"><span class="meta">الدروس اللي خلّصتها</span><div class="bar"><i id="allBar"></i></div><b class="mono" id="allPct">0/40</b></div>
+    </div>
+    <div><div class="meta">الطريق كامل</div><div class="road" id="road"></div></div>
+  </header>
+
+  <section class="tools" aria-label="أدوات">
+    <div class="tool">
+      <h3>الدوزان</h3>
+      <p class="hint">اضغط على الوتر، اسمع النغمة، وطابق صوت جيتارك معها.</p>
+      <div class="strings" id="strings"></div>
+      <div class="ctrl"><label class="meta"><input type="checkbox" id="loop"> كرّر النغمة</label></div>
+    </div>
+    <div class="tool">
+      <h3>مترونوم</h3>
+      <p class="hint">ابدأ بطيء، وزيد ٥ بس لما تعزف التمرين ٣ مرات نظيف ورا بعض.</p>
+      <div class="row"><span class="bpm" id="bpmV">60</span><input type="range" id="bpm" min="40" max="200" value="60" aria-label="السرعة"></div>
+      <div class="ctrl"><button class="btn" id="metBtn">شغّل</button><button class="btn ghost" id="minus">−5</button><button class="btn ghost" id="plus">+5</button><div class="beats" id="beats"><span></span><span></span><span></span><span></span></div></div>
+    </div>
+  </section>
+
+  <div class="main">
+    <details class="side" id="side" open><summary>فهرس الدروس</summary><nav class="nav" id="nav"></nav></details>
+    <div id="content"></div>
+  </div>
+</div>
+<script>window.addEventListener("error",function(e){var d=document.getElementById("content");if(d)d.insertAdjacentHTML("afterbegin","<p style=\"color:#B4432F;font-weight:700\">صار خطأ بالصفحة: "+(e.message||"")+"</p>")});</script>
+<script src="js/core.js"></script>
+<script src="js/svgs.js"></script>
+<script src="js/svgs2.js"></script>
+<script src="js/widgets.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/data1.js"></script>
+<script src="js/data2.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
