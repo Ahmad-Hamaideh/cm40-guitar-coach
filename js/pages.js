@@ -47,17 +47,40 @@ const SONGS=[
   {id:"eastern",t:"Em Am B7 Em",by:"تسلسل شرقي",lvl:3,kind:"كوردات",lesson:"n30"},
   {id:"nassam",t:"نسّم علينا الهوى (كاملة)",by:"فيروز",lvl:3,kind:"كوردات بالـ F",lesson:"n32",src:V.nassam},
   {id:"anda",t:"الكادانس الأندلسي",by:"فلامنكو",lvl:4,kind:"رازغيادو",lesson:"n34"},
+  // chord order from Guitarabia (chords only); each inner array is one bar
+  {id:"bektob",t:"بكتب اسمك",by:"فيروز",lvl:2,kind:"كوردات",lesson:"n16",src:["بكتب اسمك على جيتارابيا","http://www.guitarabia.com/songs/451/bektob-esmak-arabic-tabs-and-chords"],
+   bars:[["Dm"],["Am"],["Dm"],["Am"],["Am"],["E"],["Am"],["Dm"],["Dm"],["Am"],["Am"],["E"],["Am"],["Dm"],["Am"],["Dm"],["E"],["C"],["Am"],["Dm"],["G"]],secs:{0:"المقدمة",2:"مقطع 1",14:"مقطع 2"}},
+  {id:"osad",t:"قصاد عيني",by:"عمرو دياب",lvl:2,kind:"كوردات",lesson:"n16",src:["قصاد عيني على جيتارابيا","http://www.guitarabia.com/songs/70/osad-3aini-arabic-tabs-and-chords"],
+   bars:[["C","Am"],["Am","G"],["Am","G"],["G","C"],["E","Am"],["G","C"],["E","Am"],["Am","G"],["Am","G"]]},
+  {id:"sakran",t:"حنّا السكران",by:"فيروز",lvl:3,kind:"كوردات",lesson:"n21",src:["حنّا السكران على جيتارابيا","http://www.guitarabia.com/songs/8/7anna-elsakran-arabic-tabs-and-chords"],
+   bars:[["Em"],["E"],["Am"],["Dm"],["Am"],["Am"],["Dm"],["E"],["Am"],["E"],["F"],["G"],["Am"],["E"],["F"],["G"],["Am"]],secs:{0:"المقدمة",1:"مقطع",8:"اللازمة"}},
+  {id:"amar",t:"نحنا والقمر جيران",by:"فيروز",lvl:3,kind:"كوردات",lesson:"n21",src:["نحنا والقمر جيران على جيتارابيا","http://www.guitarabia.com/songs/10/nehna-wel-amar-jeran-arabic-tabs-and-chords"],
+   bars:[["Dm"],["Am"],["E"],["C"],["Dm"],["Am"],["E"],["C"],["E"],["F"],["G"],["Am"],["E"],["F"],["G"],["Am"],["Dm"],["Am"],["E"],["C"]],secs:{0:"مقطع",8:"اللازمة",16:"رجعة"}},
+  {id:"tamally",t:"تملّي معاك",by:"عمرو دياب",lvl:3,kind:"كوردات · كابو 3",capo:3,lesson:"n21",src:["تملّي معاك على جيتارابيا","http://www.guitarabia.com/2011/artists/amr-diab/%D8%AA%D9%85%D9%84%D9%8A-%D9%85%D8%B9%D8%A7%D9%83/"],
+   bars:[["Am"],["C"],["G"],["Dm"],["Am"],["Am"],["E"],["C"],["G"],["Dm"],["Am"],["Am"],["Dm"],["Am"],["G"],["C"],["E"],["C"],["G"],["Dm"],["F"],["Am"]],secs:{0:"المقدمة",12:"الغنا"}},
+  {id:"nour",t:"نور العين",by:"عمرو دياب",lvl:3,kind:"إيقاع إسباني · كابو 3",capo:3,lesson:"n21",src:["نور العين على جيتارابيا","http://www.guitarabia.com/songs/2/nour-al-ain-arabic-tabs-and-chords"],
+   bars:[["Am"],["Dm"],["Dm"],["E"],["Dm"],["E"],["Dm"],["E"],["Am"],["Dm"],["E"],["Am"],["Am"],["E"],["Dm"],["E"],["Dm"],["E"],["F"],["G"],["Am"],["E"],["Dm"],["Am"],["E"],["Dm"],["E"],["Am"]],secs:{0:"المقدمة",8:"الموسيقى",21:"مقطع",24:"اللازمة"}},
 ];
 const songLesson=s=>ALL.find(x=>x.id===s.lesson);
-const songCoach=s=>{const f=songLesson(s).figs.find(f=>f.w==="coach");return f&&f.cfg};
+const songChords=s=>s.bars?[...new Set(s.bars.flat())]:lessonChords(songLesson(s));
+const easyF=bars=>bars.map(b=>b.map(c=>c==="F"?"Fmaj7":c));
+const songCoach=s=>{
+  if(!s.bars){const f=songLesson(s).figs.find(f=>f.w==="coach");return f&&f.cfg}
+  const hasF=s.bars.flat().includes("F"),capo=s.capo?` مع الأغنية الأصلية حط كابو على فريت ${s.capo}.`:"";
+  const tr=[{n:"بسيط (٤ لتحت)",bpm:72,ev:patEv(s.bars,P4,s.secs||{}),d:`الأغنية كاملة، ٤ ضربات بكل مازورة.${capo}`},
+    {n:"مقسوم",bpm:84,ev:patEv(s.bars,rhy(RHY[0][1]),s.secs||{}),d:"نفس الأغنية بإيقاع المقسوم. طابقه على الأصلي، وإذا الأغنية على بلدي بدّل."},
+    {n:"بلدي",bpm:84,ev:patEv(s.bars,rhy(RHY[1][1]),s.secs||{})}];
+  if(hasF)tr.unshift({n:"سهل (Fmaj7 بدل F)",bpm:70,ev:patEv(easyF(s.bars),P4,s.secs||{}),d:`لحد ما يصير البار سهل عليك (درس 29) استعمل Fmaj7 مكان F.${capo}`});
+  return {tracks:tr};
+};
 const stars=n=>`<span class="stars" aria-label="الصعوبة ${n} من 4">${[1,2,3,4].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</span>`;
 function renderSongs(view){
   view.innerHTML=`${crumb("<span>مكتبة الأغاني</span>")}<div class="uh"><span class="tag">مكتبة الأغاني</span><h2>أغاني ومقطوعات مع المدرّب</h2><p>مرتّبة من الأسهل للأصعب. كل وحدة إلها الدرس اللي بيحضّرك إلها.</p></div>
-  <div class="songgrid">${SONGS.map(s=>{const l=songLesson(s),ok=ALL.slice(0,l.no-1).every(x=>done[x.id])||done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p>${stars(s.lvl)}<div class="pats">${lessonChords(l).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
+  <div class="songgrid">${[...SONGS].sort((a,b)=>a.lvl-b.lvl).map(s=>{const l=songLesson(s),ok=ALL.slice(0,l.no-1).every(x=>done[x.id])||done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p>${stars(s.lvl)}<div class="pats">${songChords(s).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
 }
 function renderSong(view,id){
   const s=SONGS.find(x=>x.id===id);if(!s)return renderSongs(view);
-  const l=songLesson(s),chs=lessonChords(l);
+  const l=songLesson(s),chs=songChords(s);
   view.innerHTML=`${crumb(`<a href="#/songs">مكتبة الأغاني</a><span>›</span><span>${s.t}</span>`)}
   <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><div class="figs"></div>
   <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${c}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>

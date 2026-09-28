@@ -11,7 +11,7 @@ const FOOT=`<footer>التقدّم محفوظ على هاد الجهاز وال�
 function renderHome(){
   const n=ALL.filter(l=>done[l.id]).length,nx=ALL.find(l=>!done[l.id])||ALL[0],st=streak(),mins=Math.round(Object.values(LS("cm40-log",{})).reduce((a,b)=>a+b,0));
   const plan=sessionPlan(),total=plan.reduce((a,s)=>a+s.min,0);
-  const tiles=[["#/chords","مكتبة الكوردات",`${LIB.length} كورد بالإيد والصوت`,`<div class="tpic">${chordSVG(CH.Am)}</div>`],["#/songs","مكتبة الأغاني",`${SONGS.length} أغاني ومقطوعات`,`<div class="tpic">${ICO.guitar}</div>`],["#/ear","تدريب الأذن","كبير ولا صغير، المسافات، الأوتار",`<div class="tpic">${ICO.ear}</div>`],["#/progress","تقدّمي","أيام، دقايق، أرقام",`<div class="tpic">${ICO.metro}</div>`]];
+  const tiles=[["#/learn","موسوعة التعلّم السريع","١٢ مبدأ علمي + كل التريكات",`<div class="tpic">${LP.chunk}</div>`],["#/chords","مكتبة الكوردات",`${LIB.length} كورد بالإيد والصوت`,`<div class="tpic">${chordSVG(CH.Am)}</div>`],["#/songs","مكتبة الأغاني",`${SONGS.length} أغاني ومقطوعات`,`<div class="tpic">${ICO.guitar}</div>`],["#/ear","تدريب الأذن","كبير ولا صغير، المسافات، الأوتار",`<div class="tpic">${ICO.ear}</div>`],["#/progress","تقدّمي","أيام، دقايق، أرقام",`<div class="tpic">${ICO.metro}</div>`]];
   view.innerHTML=`<section class="dash">
     <div class="dhero"><div class="eyebrow">Yamaha CM40 · جيتار كلاسيك</div><h1>${n?"أهلاً رجعت!":"أهلاً! يلا نبلّش"}</h1>
       <p class="lead">جيتار كامل وإيدين بيعزفوا قدّامك بصوت حقيقي، وبعدين دورك. والمايك بيسمعك وبيستنّاك لحد ما تعزف صح.</p>
@@ -59,6 +59,7 @@ const ROUTES=[
   [/^#\/today$/,()=>{renderToday(view);return "تمرين اليوم"},"#/today"],
   [/^#\/progress$/,()=>{renderProgress(view);return "تقدّمي"},"#/progress"],
   [/^#\/ear$/,()=>{renderEar(view);return "تدريب الأذن"},"#/ear"],
+  [/^#\/learn$/,()=>{renderLearn(view);return "موسوعة التعلّم السريع"},"#/learn"],
   [/^#\/help/,()=>{renderHelp();return "عيادة المشاكل"},"#/help"],
 ];
 function route(){
