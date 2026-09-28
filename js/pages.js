@@ -2,7 +2,17 @@
 const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const LSset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const dayKey=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-function logPractice(sec){if(sec<5)return;const log=LS("cm40-log",{}),k=dayKey(new Date());log[k]=Math.round(((log[k]||0)+sec/60)*10)/10;LSset("cm40-log",log)}
+// The player and the today-timer can run at the same time, so keep the union of logged spans and count each second once.
+const LOGGED=[];
+function logPractice(sec,id){if(sec<5)return;const b=Date.now(),a=b-sec*1000;let add=b-a;
+  LOGGED.forEach(([x,y])=>add-=Math.max(0,Math.min(b,y)-Math.max(a,x)));
+  LOGGED.push([a,b]);LOGGED.sort((p,q)=>p[0]-q[0]);for(let i=LOGGED.length-1;i>0;i--)if(LOGGED[i][0]<=LOGGED[i-1][1]){LOGGED[i-1][1]=Math.max(LOGGED[i-1][1],LOGGED[i][1]);LOGGED.splice(i,1)}
+  if(add>=1000){const log=LS("cm40-log",{}),k=dayKey(new Date());log[k]=Math.round(((log[k]||0)+add/6e4)*10)/10;LSset("cm40-log",log)}
+  if(id){const st=ST();st[id]=st[id]||{};st[id].prac=Math.round((st[id].prac||0)+sec);LSset("cm40-st",st)}}
+// Per-lesson state, kept apart from "mastered" (the done checkbox): seen, practice seconds, note check, rhythm exam.
+const ST=()=>LS("cm40-st",{});
+function setSt(id,k,v){const st=ST();st[id]=st[id]||{};st[id][k]=v;LSset("cm40-st",st)}
+const hasCoach=l=>l.figs.some(f=>f.w==="coach");
 function streak(){const log=LS("cm40-log",{});let n=0,d=new Date();if(!log[dayKey(d)])d=new Date(d-864e5);while(log[dayKey(d)]){n++;d=new Date(d-864e5)}return n}
 const crumb=h=>`<nav class="crumb"><a href="#/">الرئيسية</a><span>›</span>${h}</nav>`;
 const mountFig=(host,f)=>{const d=document.createElement("div");d.className="fig";host.appendChild(d);if(typeof f==="string")d.innerHTML=f;else W[f.w](d,f.cfg||{});return d};
@@ -39,14 +49,14 @@ function renderChord(view,c){
 
 // ---------- songs ----------
 const SONGS=[
-  {id:"ode",t:"نشيد الفرح",by:"بيتهوفن",lvl:1,kind:"لحن",lesson:"n9"},
-  {id:"etude",t:"دراسة على النهاوند",by:"المدرّب",lvl:2,kind:"أربيج",lesson:"n27"},
-  {id:"kan",t:"كان عنّا طاحون",by:"فيروز",lvl:2,kind:"كوردات · مقسوم",lesson:"n16",src:V.kan},
-  {id:"nassam1",t:"نسّم علينا الهوى (أول سطر)",by:"فيروز",lvl:2,kind:"كوردات · بلدي",lesson:"n21",src:V.nassam},
-  {id:"romanza",t:"Romanza (البداية)",by:"مجهول",lvl:3,kind:"كلاسيك",lesson:"n22",src:V.rom},
-  {id:"eastern",t:"Em Am B7 Em",by:"تسلسل شرقي",lvl:3,kind:"كوردات",lesson:"n30"},
-  {id:"nassam",t:"نسّم علينا الهوى (كاملة)",by:"فيروز",lvl:3,kind:"كوردات بالـ F",lesson:"n32",src:V.nassam},
-  {id:"anda",t:"الكادانس الأندلسي",by:"فلامنكو",lvl:4,kind:"رازغيادو",lesson:"n34"},
+  {id:"ode",arr:"mel",t:"نشيد الفرح",by:"بيتهوفن",lvl:1,kind:"لحن",lesson:"n9"},
+  {id:"etude",arr:"ex",t:"دراسة على النهاوند",by:"المدرّب",lvl:2,kind:"أربيج",lesson:"n27"},
+  {id:"kan",arr:"acc",t:"كان عنّا طاحون",by:"فيروز",lvl:2,kind:"كوردات · مقسوم",lesson:"n16",src:V.kan},
+  {id:"nassam1",arr:"acc",t:"نسّم علينا الهوى (أول سطر)",by:"فيروز",lvl:2,kind:"كوردات · بلدي",lesson:"n21",src:V.nassam},
+  {id:"romanza",arr:"part",t:"Romanza (البداية)",by:"مجهول",lvl:3,kind:"كلاسيك",lesson:"n22",src:V.rom},
+  {id:"eastern",arr:"ex",t:"Em Am B7 Em",by:"تسلسل شرقي",lvl:3,kind:"كوردات",lesson:"n30"},
+  {id:"nassam",arr:"acc",t:"نسّم علينا الهوى (كاملة)",by:"فيروز",lvl:3,kind:"كوردات بالـ F",lesson:"n32",src:V.nassam},
+  {id:"anda",arr:"ex",t:"الكادانس الأندلسي",by:"فلامنكو",lvl:4,kind:"رازغيادو",lesson:"n34"},
   // chord order from Guitarabia (chords only); each inner array is one bar
   {id:"bektob",t:"بكتب اسمك",by:"فيروز",lvl:2,kind:"كوردات",lesson:"n16",src:["بكتب اسمك على جيتارابيا","http://www.guitarabia.com/songs/451/bektob-esmak-arabic-tabs-and-chords"],
    bars:[["Dm"],["Am"],["Dm"],["Am"],["Am"],["E"],["Am"],["Dm"],["Dm"],["Am"],["Am"],["E"],["Am"],["Dm"],["Am"],["Dm"],["E"],["C"],["Am"],["Dm"],["G"]],secs:{0:"المقدمة",2:"مقطع 1",14:"مقطع 2"}},
@@ -73,6 +83,10 @@ const SONGS=[
    bars:"A Dm A Dm A Gm A Gm A Dm A Dm A Gm A Gm A Dm A Dm A Dm A Dm A Gm A Gm A Dm A Dm A Dm A Dm A Gm A Gm".split(" ").reduce((a,c,i)=>(i%2?a[a.length-1].push(c):a.push([c]),a),[])},
 ];
 const songLesson=s=>ALL.find(x=>x.id===s.lesson);
+const ARR={acc:["مصاحبة مبسّطة","ترتيب الكوردات من المصدر، بس الإيقاع عام ومش نفس التسجيل، واللحن مش موجود. غنّي فوقها أو طابقها مع الأصلي."],
+  mel:["اللحن","النغمات الأساسية للّحن نفسه."],piece:["المقطوعة من التاب","النغمات والإيقاع من التاب الأصلي. أصابع الإيد الشمال مقترحة."],
+  part:["مقطع من المقطوعة","أول جزء بس، عشان تتعوّد عليها."],ex:["تمرين","مكتوب للدرس، مش أغنية أصلية."]};
+const arrOf=s=>ARR[s.arr||(s.piece?"piece":s.bars?"acc":"ex")];
 const songChords=s=>s.bars?[...new Set(s.bars.flat())]:lessonChords(songLesson(s));
 const easyF=bars=>bars.map(b=>b.map(c=>c==="F"?"Fmaj7":c));
 const songCoach=s=>{
@@ -88,13 +102,13 @@ const songCoach=s=>{
 const stars=n=>`<span class="stars" aria-label="الصعوبة ${n} من 4">${[1,2,3,4].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</span>`;
 function renderSongs(view){
   view.innerHTML=`${crumb("<span>مكتبة الأغاني</span>")}<div class="uh"><span class="tag">مكتبة الأغاني</span><h2>أغاني ومقطوعات مع المدرّب</h2><p>مرتّبة من الأسهل للأصعب. كل وحدة إلها الدرس اللي بيحضّرك إلها.</p></div>
-  <div class="songgrid">${[...SONGS].sort((a,b)=>a.lvl-b.lvl).map(s=>{const l=songLesson(s),ok=ALL.slice(0,l.no-1).every(x=>done[x.id])||done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p>${stars(s.lvl)}<div class="pats">${songChords(s).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
+  <div class="songgrid">${[...SONGS].sort((a,b)=>a.lvl-b.lvl).map(s=>{const l=songLesson(s),ok=done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p><span class="arr">${arrOf(s)[0]}</span>${stars(s.lvl)}<div class="pats">${songChords(s).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
 }
 function renderSong(view,id){
   const s=SONGS.find(x=>x.id===id);if(!s)return renderSongs(view);
   const l=songLesson(s),chs=songChords(s);
   view.innerHTML=`${crumb(`<a href="#/songs">مكتبة الأغاني</a><span>›</span><span>${s.t}</span>`)}
-  <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><div class="figs"></div>
+  <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><p class="arrp"><span class="arr">${arrOf(s)[0]}</span> ${arrOf(s)[1]}</p><div class="figs"></div>
   <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${encodeURIComponent(c)}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>
   <div><h4>الدرس اللي بيحضّرك</h4><div class="pats"><a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a></div>${s.src?`<h4 style="margin-top:12px">المصدر</h4><div class="vids"><a href="${s.src[1]}" target="_blank" rel="noopener">${ICON_PLAY}${s.src[0]}</a></div>`:""}</div></div></article>`;
   mountFig(view.querySelector(".figs"),{w:"coach",cfg:songCoach(s)});
@@ -110,23 +124,46 @@ function dueReviews(){const r=LS("cm40-rev",{}),t=dayKey(new Date());
 function reviewed(id){const r=LS("cm40-rev",{});if(r[id]){r[id].n++;r[id].d=dayKey(new Date());LSset("cm40-rev",r)}}
 
 // ---------- today's practice ----------
+// Only uses what you already learned (plus the next lesson), and fits the minutes you said you have.
+// Understanding the next lesson and practising it are separate steps.
 function sessionPlan(){
-  const next=ALL.find(l=>!done[l.id])||ALL[ALL.length-1],reached=ALL.slice(0,next.no);
-  const coachOf=id=>ALL.find(x=>x.id===id).figs.find(f=>f.w==="coach");
-  const steps=[{t:"تسخين: الكروماتيك",min:5,fig:coachOf("n10"),why:"الأصابع الأربعة والإيدين مع بعض."}];
-  dueReviews().slice(0,2).forEach(id=>{const l=ALL.find(x=>x.id===id);steps.push({t:`مراجعة: ${l.no}. ${l.t}`,min:5,fig:l.figs.find(f=>f.w==="coach")||l.figs.find(f=>typeof f!=="string")||l.figs[0],why:"المراجعة بوقتها بتثبّت الدرس بالذاكرة الطويلة.",link:l.id,rev:id})});
-  steps.push({t:`الدرس الحالي: ${next.no}. ${next.t}`,min:10,fig:next.figs.find(f=>f.w==="coach")||next.figs.find(f=>typeof f!=="string")||next.figs[0],why:next.goal,link:next.id});
-  const pairs=[];reached.forEach(l=>l.figs.forEach(f=>{if(f.w==="sw")pairs.push(...f.cfg.pairs)}));
-  if(pairs.length){const best=LS("cm40-best",{});pairs.sort((a,b)=>(best[a.join("-")]||0)-(best[b.join("-")]||0));steps.push({t:"تبديل كوردات",min:5,fig:{w:"sw",cfg:{pairs:pairs.slice(0,3)}},why:"الأزواج اللي رقمها الأبطأ عندك."})}
-  const ready=SONGS.filter(s=>songLesson(s).no<=next.no),song=ready[ready.length-1]||SONGS[0];
-  steps.push({t:`أغنية: ${song.t}`,min:10,fig:{w:"coach",cfg:songCoach(song)},why:"عشان تضل مبسوط وما تزهق."});
+  const prof=LS("cm40-prof",{min:30,from:1}),st=ST();
+  const next=ALL.find(l=>!done[l.id]&&l.no>=(prof.from||1))||ALL.find(l=>!done[l.id])||ALL[ALL.length-1];
+  const figOf=l=>l.figs.find(f=>f.w==="coach")||l.figs.find(f=>typeof f!=="string")||l.figs[0];
+  const learned=ALL.filter(l=>done[l.id]),steps=[];
+  steps.push({t:"دوزن الجيتار",min:2,fig:{w:"mtuner"},why:"جيتار مش مدوزن بيعلّم أذنك غلط. شغّل المايك واعزف كل وتر لحاله.",keep:1});
+  const warm=done.n10?ALL.find(x=>x.id==="n10"):[...learned].reverse().find(hasCoach);
+  if(warm)steps.push({t:`تسخين: ${warm.t}`,min:done.n10?5:3,fig:figOf(warm),why:done.n10?"الأصابع الأربعة والإيدين مع بعض.":"إشي تعلّمته قبل، عشان الإيدين يسخنوا.",link:warm.id,drop:2});
+  dueReviews().slice(0,2).forEach(id=>{const l=ALL.find(x=>x.id===id);steps.push({t:`مراجعة: ${l.no}. ${l.t}`,min:5,fig:figOf(l),why:"المراجعة بوقتها بتثبّت الدرس بالذاكرة الطويلة.",link:l.id,rev:id,drop:3})});
+  if(!(st[next.id]||{}).seen)steps.push({t:`افهم: ${next.no}. ${next.t}`,min:Math.max(3,Math.min(Math.round(next.m/2),Math.round(prof.min*.3))),fig:next.figs.find(f=>typeof f==="string")||next.figs[0],why:"افتح الدرس واقرأ «افهم» خطوة خطوة قبل ما تعزف.",link:next.id,keep:1});
+  steps.push({t:`${hasCoach(next)?"تمرّن":"طبّق"}: ${next.no}. ${next.t}`,min:10,fig:figOf(next),why:next.goal,link:next.id,keep:1,main:1});
+  const pairs=[];learned.forEach(l=>l.figs.forEach(f=>{if(f.w==="sw")pairs.push(...f.cfg.pairs)}));
+  if(pairs.length){const best=LS("cm40-best",{});pairs.sort((a,b)=>(best[a.join("-")]||0)-(best[b.join("-")]||0));steps.push({t:"تبديل كوردات",min:5,fig:{w:"sw",cfg:{pairs:pairs.slice(0,3)}},why:"الأزواج اللي رقمها الأبطأ عندك.",drop:1})}
+  const ready=SONGS.filter(s=>done[s.lesson]);
+  if(ready.length){const song=ready[ready.length-1];steps.push({t:`أغنية: ${song.t}`,min:10,fig:{w:"coach",cfg:songCoach(song)},why:"إشي بتقدر تعزفه من هلأ، عشان تضل مبسوط.",drop:2})}
+  const tot=()=>steps.reduce((a,s)=>a+s.min,0);
+  steps.filter(s=>s.drop).sort((a,b)=>a.drop-b.drop).forEach(s=>{if(tot()>prof.min)steps.splice(steps.indexOf(s),1)});
+  // spare time goes to practice, but a short lesson doesn't need more than ~1.5x its length
+  const main=steps.find(s=>s.main);main.min=Math.min(main.min+Math.max(0,prof.min-tot()),Math.max(10,Math.round(next.m*1.5)));
   return steps;
 }
+function askProfile(view){
+  const p=LS("cm40-prof",{min:30,from:1});
+  view.innerHTML=`${crumb("<span>تمرين اليوم</span>")}<div class="uh"><span class="tag">سؤالين قبل ما نبلّش</span><h2>خلّيني أرتّبلك الجلسة</h2></div>
+  <section class="pcard prof"><h3>كم دقيقة عندك باليوم؟</h3><div class="pats pm">${[10,20,30,45].map(m=>`<button class="chip${m===p.min?" on":""}" data-v="${m}">${m} دقيقة</button>`).join("")}</div>
+  <h3>شو خبرتك؟</h3><div class="pats pf">${[[1,"أول مرة بمسك جيتار"],[12,"بعرف القعدة والأوتار والتاب"],[18,"بعزف كوردات سهلة"]].map(([v,t])=>`<button class="chip${v===(p.from||1)?" on":""}" data-v="${v}">${t}</button>`).join("")}</div>
+  <p class="meta">إذا بتعرف إشي، الخطة بتبدأ من بعد اللي بتعرفه. الدروس اللي قبل بتضل مفتوحة، وبتقدر تغيّر جوابك من «تمرين اليوم».</p><button class="btn big pgo">جهّز الجلسة</button></section>`;
+  const pick=(sel,k)=>view.querySelector(sel).onclick=e=>{const b=e.target.closest(".chip");if(!b)return;p[k]=+b.dataset.v;view.querySelectorAll(sel+" .chip").forEach(x=>x.classList.toggle("on",x===b))};
+  pick(".pm","min");pick(".pf","from");
+  view.querySelector(".pgo").onclick=()=>{LSset("cm40-prof",p);renderToday(view)};
+}
 function renderToday(view){
+  if(localStorage.getItem("cm40-prof")==null)return askProfile(view);
   const steps=sessionPlan(),total=steps.reduce((a,s)=>a+s.min,0);let i=0,left=0,iv=null,spent=0;
-  view.innerHTML=`${crumb("<span>تمرين اليوم</span>")}<div class="uh"><span class="tag">تمرين اليوم · ${total} دقيقة</span><h2>جلسة اليوم جاهزة</h2><p>مبنية على الدروس اللي خلّصتها. كل خطوة إلها وقت، واعمل وحدة وحدة.</p></div>
+  view.innerHTML=`${crumb("<span>تمرين اليوم</span>")}<div class="uh"><span class="tag">تمرين اليوم · ${total} دقيقة</span><h2>جلسة اليوم جاهزة</h2><p>مبنية على الدروس اللي أتقنتها بس، وعلى الوقت اللي عندك. <button class="chip pchg">غيّر الوقت أو الخبرة</button></p></div>
   <ol class="tsteps">${steps.map((s,k)=>`<li data-k="${k}"><b>${s.t}</b><span class="meta">${s.min} د</span></li>`).join("")}</ol>
   <section class="tnow"><header class="lh"><h3 class="tt"></h3><span class="meta tw"></span></header><div class="timer"><b class="big mono tm"></b><button class="btn tgo">ابدأ المؤقّت</button><button class="btn ghost tnx">خلّصت، الجاية</button></div><div class="figs"></div></section>`;
+  view.querySelector(".pchg").onclick=()=>{stopAll();askProfile(view)};
   const tm=view.querySelector(".tm"),tgo=view.querySelector(".tgo"),figs=view.querySelector(".figs");
   const fmt=s=>`${Math.floor(s/60)}:${String(Math.max(0,s)%60).padStart(2,"0")}`;
   const stopT=()=>{clearInterval(iv);iv=null;tgo.textContent="كمّل المؤقّت"};
@@ -149,7 +186,7 @@ function renderToday(view){
 // ---------- progress ----------
 function renderProgress(view){
   const log=LS("cm40-log",{}),mins=Object.values(log).reduce((a,b)=>a+b,0),n=ALL.filter(l=>done[l.id]).length,qz=LS("cm40-quiz",{}),best=LS("cm40-best",{}),ear=LS("cm40-ear",{});
-  const tiles=[[streak(),"يوم ورا بعض"],[Math.round(mins),"دقيقة تمرين"],[`${n}/${ALL.length}`,"درس خلّصته"],[Object.values(qz).reduce((a,b)=>a+b,0),"جواب صح"]];
+  const tiles=[[streak(),"يوم ورا بعض"],[Math.round(mins),"دقيقة تمرين"],[`${n}/${ALL.length}`,"درس أتقنته"],[Object.values(qz).reduce((a,b)=>a+b,0),"جواب صح"]];
   const W7=12,cells=[];const d0=new Date();d0.setDate(d0.getDate()-(W7*7-1));
   for(let k=0;k<W7*7;k++){const d=new Date(d0);d.setDate(d0.getDate()+k);const m=log[dayKey(d)]||0;cells.push([k,m,dayKey(d)])}
   const col=m=>!m?"var(--soft)":m<10?"#2E6A66":m<20?"#4FB3A9":"#E6B04B";
@@ -161,7 +198,34 @@ function renderProgress(view){
   <div class="pgrid"><section class="pcard"><h3>أيام التمرين</h3><p class="meta">آخر ${W7} أسبوع. كل مربّع يوم، وكل ما كان أغمق ذهبي يعني تمرّنت أكتر.</p>${heat}</section>
   <section class="pcard"><h3>تبديل الكوردات (بالدقيقة)</h3><p class="meta">الخط الذهبي = ٦٠، الهدف.</p>${chart}</section>
   <section class="pcard"><h3>الوحدات</h3>${UNITS.map(u=>{const d=u.lessons.filter(l=>done[l.id]).length;return `<div class="urow"><span>${u.id} · ${u.name}</span><div class="bar"><i style="width:${d/u.lessons.length*100}%"></i></div><span class="mono">${d}/${u.lessons.length}</span></div>`}).join("")}</section>
+  <section class="pcard"><h3>احفظ تقدّمك</h3><p class="meta">التقدّم محفوظ بهاد المتصفح بس. نزّل نسخة، وارجعها على أي جهاز أو بعد ما تمسح المتصفح.</p><div class="ctrl"><button class="btn ghost pexp">نزّل نسخة</button><label class="btn ghost">ارجع نسخة<input type="file" accept=".json,application/json" class="pimp" hidden></label></div><p class="meta pmsg"></p></section>
+  <section class="pcard"><h3>الدورة بدون نت</h3><p class="meta poffm">بفحص…</p><button class="btn ghost poff">نزّل كل الدورة</button></section>
   <section class="pcard"><h3>تدريب الأذن</h3>${Object.keys(EAR).map(k=>`<div class="urow"><span>${EAR[k].n}</span><span class="mono">${ear[k]||0}</span><span class="meta">أحسن سلسلة صح</span></div>`).join("")}</section></div>`;
+  wireBackup(view);
+}
+
+// ---------- backup and offline ----------
+function wireBackup(view){
+  const msg=view.querySelector(".pmsg");
+  view.querySelector(".pexp").onclick=()=>{const o={};Object.keys(localStorage).filter(k=>k.startsWith("cm40-")).forEach(k=>o[k]=localStorage.getItem(k));
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,1)],{type:"application/json"}));a.download=`cm40-progress-${dayKey(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);msg.textContent="نزلت النسخة. خبّيها بمكان آمن."};
+  view.querySelector(".pimp").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+    let o;try{o=JSON.parse(await f.text())}catch(err){msg.textContent="هاد الملف مش نسخة تقدّم.";return}
+    const ks=o&&typeof o==="object"?Object.keys(o).filter(k=>/^cm40-[a-z]+$/.test(k)&&typeof o[k]==="string"):[];
+    if(!ks.length||!ks.every(k=>{try{JSON.parse(o[k]);return true}catch(err){return false}})){msg.textContent="هاد الملف مش نسخة تقدّم.";return}
+    if(!confirm("رح تنمسح نسختك الحالية على هاد الجهاز وتحلّ محلها النسخة من الملف. أكمّل؟"))return;
+    ks.forEach(k=>localStorage.setItem(k,o[k]));location.reload()};
+  // The service worker caches what you open; this fetches everything up front and says when it's complete.
+  const om=view.querySelector(".poffm"),ob=view.querySelector(".poff");
+  if(!("caches" in window)||!navigator.serviceWorker||!navigator.serviceWorker.controller){om.textContent="بيشتغل من الرابط الرسمي بس (https)، بعد ما تفتح الموقع مرة.";ob.hidden=true;return}
+  const urls=["./","index.html","manifest.webmanifest","icon.svg",...[...document.scripts].map(x=>x.getAttribute("src")).filter(Boolean),...Array.from({length:47},(_,i)=>`samples/${40+i}.mp3`)];
+  const cache=async()=>caches.open((await caches.keys()).find(k=>k.startsWith("cm40-"))||"cm40-v10");
+  const count=async c=>(await Promise.all(urls.map(u=>c.match(u)))).filter(Boolean).length;
+  const status=async()=>{const n=await count(await cache());om.textContent=n===urls.length?`✓ الدورة كاملة محمّلة (${n}/${urls.length} ملف). بتشتغل بدون نت.`:`محمّل ${n} من ${urls.length} ملف. نزّل الباقي عشان تشتغل بدون نت.`;ob.hidden=n===urls.length};
+  ob.onclick=async()=>{ob.disabled=true;const c=await cache();let k=0,bad=0;
+    for(const u of urls){try{if(!await c.match(u))await c.add(u)}catch(err){bad++}om.textContent=`بنزّل… ${++k}/${urls.length}`}
+    ob.disabled=false;await status();if(bad)om.textContent+=` (${bad} ما نزلوا، جرّب مرة ثانية)`};
+  status();
 }
 
 // ---------- ear training ----------

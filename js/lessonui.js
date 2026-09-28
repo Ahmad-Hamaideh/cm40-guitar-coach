@@ -57,7 +57,7 @@ function makeQuiz(l){
   l.mist.slice(0,2).forEach(([x,ok])=>{const w=new Set();while(w.size<2)w.add(pick(pool));qs.push({q:`<b>المشكلة:</b> ${x}. شو الحل الصح؟`,opts:shuf([ok,...w]),a:ok})});
   const chs=lessonChords(l);
   if(chs.length){const c=pick(chs),o=new Set(),all=Object.keys(CH).filter(k=>!/^H/.test(k)&&k!==c);while(o.size<2)o.add(pick(all));qs.push({pic:chordSVG(CH[c]),q:"أي كورد هاد؟",opts:shuf([c,...o]),a:c})}
-  else{const st=1+Math.floor(R()*3),fr=[0,1,3][Math.floor(R()*3)],n=noteOf(st,fr),a=NOTE_AR[n]||n,o=new Set();while(o.size<2){const v=pick(Object.values(NOTE_AR));if(v!==a)o.add(v)}
+  else if(l.no>=4){const open=l.no<9,st=1+Math.floor(R()*(open?6:3)),fr=open?0:[0,1,3][Math.floor(R()*3)],n=noteOf(st,fr),a=NOTE_AR[n]||n,o=new Set();while(o.size<2){const v=pick(Object.values(NOTE_AR));if(v!==a)o.add(v)}
     qs.push({pic:`<div class="fbwrap">${miniFret(st,fr)}</div>`,q:"شو اسم هالنغمة؟ (اسمعها كمان)",opts:shuf([a,...o]),a,snd:[st,fr]})}
   return qs;
 }
@@ -70,7 +70,7 @@ function lessonBody(l,host){
   <section class="lt" data-t="learn" hidden><div class="slides">${l.steps.map((s,i)=>`<div class="slide"${i?" hidden":""}><div class="spic">${stepPic(s,l,chs,i)}</div><div class="stext"><span class="sn mono">${i+1} / ${l.steps.length}</span><p>${s}</p></div></div>`).join("")}</div>
     <div class="snav"><button class="btn ghost sp">السابقة</button><span class="sdots">${l.steps.map((_,i)=>`<i class="${i?"":"on"}"></i>`).join("")}</span><button class="btn sn2">الجاية</button></div></section>
   <section class="lt" data-t="warn" hidden><div class="mgrid">${l.mist.map(([x,o])=>{const p=pickPair(x+" "+o)||stepPic(o,l,chs);return `<div class="mcard">${p?`<div class="mpic">${p}</div>`:""}<p class="x">✗ ${x}</p><p class="ok">✓ ${o}</p></div>`}).join("")}</div></section>
-  <section class="lt" data-t="quiz" hidden><p class="meta">٣ أسئلة سريعة، اختيارية. بتساعدك تتأكد إنك فهمت.</p><div class="quiz"></div></section>`;
+  <section class="lt" data-t="quiz" hidden><p class="meta">${qs.length} أسئلة سريعة، اختيارية. بتساعدك تتأكد إنك فهمت.</p><div class="quiz"></div></section>`;
   const tabs=host.querySelectorAll(".ltabs button"),secs=host.querySelectorAll(".lt");
   host.querySelector(".ltabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tabs.forEach(x=>x.classList.toggle("on",x===b));secs.forEach(s=>s.hidden=s.dataset.t!==b.dataset.t)};
   const slides=[...host.querySelectorAll(".slide")],dots=[...host.querySelectorAll(".sdots i")];let si=0;

@@ -6,7 +6,7 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}};
 
 const ALL=[];UNITS.forEach(u=>u.lessons.forEach(l=>{l.u=u;l.no=ALL.length+1;ALL.push(l)}));
 const view=document.getElementById("view");
-const FOOT=`<footer>التقدّم محفوظ على هاد الجهاز والمتصفح بس.<br>المصادر: <a href="https://www.thisisclassicalguitar.com/free-classical-guitar-method-book-pdf/" target="_blank" rel="noopener">Bradford Werner (This is Classical Guitar)</a> · <a href="https://www.justinguitar.com/classes/beginner-guitar-course-grade-one" target="_blank" rel="noopener">JustinGuitar</a> · <a href="http://www.guitarabia.com/" target="_blank" rel="noopener">جيتارابيا</a> (ترتيب كوردات الأغاني، فطابقه مع الأصلي). صوت الجيتار: FluidR3 GM (رخصة MIT).</footer>`;
+const FOOT=`<footer>التقدّم محفوظ على هاد الجهاز والمتصفح بس. نزّل نسخة منه من <a href="#/progress">تقدّمي</a>.<br>المصادر: <a href="https://www.thisisclassicalguitar.com/free-classical-guitar-method-book-pdf/" target="_blank" rel="noopener">Bradford Werner (This is Classical Guitar)</a> · <a href="https://www.justinguitar.com/classes/beginner-guitar-course-grade-one" target="_blank" rel="noopener">JustinGuitar</a> · <a href="http://www.guitarabia.com/" target="_blank" rel="noopener">جيتارابيا</a> (ترتيب كوردات الأغاني، فطابقه مع الأصلي). صوت الجيتار: FluidR3 GM (رخصة MIT).</footer>`;
 
 function renderHome(){
   const n=ALL.filter(l=>done[l.id]).length,nx=ALL.find(l=>!done[l.id])||ALL[0],st=streak(),mins=Math.round(Object.values(LS("cm40-log",{})).reduce((a,b)=>a+b,0));
@@ -26,19 +26,31 @@ function renderHome(){
   <p style="margin-top:28px"><a href="#/help">عندك مشكلة؟ عيادة المشاكل والروتين اليومي ←</a></p>${FOOT}`;
 }
 
+// Watched, practised, note check and rhythm exam are shown apart from "mastered" (the checkbox).
+function mastery(l){const s=ST()[l.id]||{},c=hasCoach(l),it=[["شفته",s.seen],["تدرّبت ٣ دقايق",(s.prac||0)>=180]];
+  if(c)it.push(["فحص النغمات",s.notes],["امتحان الإيقاع",s.rhy]);
+  return `<div class="mst">${it.map(([t,ok])=>`<span class="${ok?"on":""}">${ok?"✓":"○"} ${t}</span>`).join("")}</div>
+  <p class="meta">${c?"متى بتعتبره متقن؟ لما تنجح بـ«امتحان بالإيقاع» (٨٠٪ أو أكتر على سرعة «٣ الهدف»)، من «خيارات أكتر» تحت الجيتار. «فحص النغمات» بيفحص النغمات بس، مش الوقت.":"متى بتعتبره متقن؟ لما تقدر تعمل الهدف فوق لحالك بدون ما ترجع للشرح. هون ما في امتحان مايك، فأنت اللي بتقرّر."}</p>`}
 function renderLesson(l){
+  setSt(l.id,"seen",1);
   const prev=ALL[l.no-2],next=ALL[l.no];
   view.innerHTML=`${crumb(`<a href="#/">كل الدروس</a><span>›</span><span>الوحدة ${l.u.id}: ${l.u.name}</span><span>›</span><span>درس ${l.no} من ${ALL.length}</span>`)}
   <article class="lesson" id="${l.id}"><header class="lh"><span class="ln">درس ${l.no}</span><h2>${l.t}</h2><span class="meta">${l.m} دقيقة</span></header>
     <p class="goal"><b>الهدف:</b> ${l.goal}</p><div class="lbody"></div>
     <div class="foot"><div class="vids">${l.vids.length?l.vids.map(([t,h])=>`<a href="${h}" target="_blank" rel="noopener">${ICON_PLAY}${t}</a>`).join(""):`<span class="meta">هاد الدرس ما بدّه فيديو، الرسمات بتكفّي.</span>`}</div>
-    <label class="done"><input type="checkbox" data-l="${l.id}" ${done[l.id]?"checked":""}> خلّصت الدرس</label></div>
+    <label class="done"><input type="checkbox" data-l="${l.id}" ${done[l.id]?"checked":""}> أتقنته</label></div><div class="mwrap">${mastery(l)}</div>
     <div class="rate"><span class="meta">الدرس كان:</span>${[["easy","سهل"],["ok","مناسب"],["hard","صعب"]].map(([k,t])=>`<button class="chip${(LS("cm40-rev",{})[l.id]||{}).rate===k?" on":""}" data-r="${k}">${t}</button>`).join("")}<span class="meta rmsg"></span></div></article>
   <nav class="lnav">${prev?`<a href="#/l/${prev.id}"><small>الدرس اللي قبل</small>${prev.no}. ${prev.t}</a>`:"<span></span>"}${next?`<a class="nx" href="#/l/${next.id}"><small>الدرس الجاي</small>${next.no}. ${next.t}</a>`:`<a class="nx" href="#/"><small>خلّصت الدورة!</small>رجوع للرئيسية</a>`}</nav>`;
   const figs=lessonBody(l,view.querySelector(".lbody"));
   l.figs.forEach(f=>{try{mountFig(figs,f)}catch(err){console.error(l.id,err)}});
 }
 
+const GLOSS=[["فريت","المسافة بين قضيبين حديد على زند الجيتار. «فريت ٣» يعني المربّع التالت من فوق."],["تاب","طريقة كتابة الموسيقى للجيتار: ٦ خطوط = ٦ أوتار، والرقم = رقم الفريت. (درس 8)"],
+  ["كورد","كذا نغمة بترنّ مع بعض. بنكتبه بحرف: Am، E، C…"],["رسمة الكورد","صورة للزند بتوريك وين تحط كل إصبع. (درس 11)"],["أربيج","تعزف نغمات الكورد وتر وتر بدل ما تضربهم مع بعض."],
+  ["BPM","عدد الضربات بالدقيقة. ٦٠ يعني ضربة كل ثانية، و٩٠ أسرع."],["مترونوم","ساعة بتطقطق على الـBPM اللي بتختاره، عشان تضل على الوقت."],["p i m a","أصابع الإيد اليمين: p إبهام، i سبابة، m وسطى، a بنصر."],
+  ["١ ٢ ٣ ٤","أصابع الإيد الشمال: ١ سبابة، ٢ وسطى، ٣ بنصر، ٤ خنصر."],["مازورة","مجموعة ضربات بتتكرّر (عادة ٣ أو ٤). بالتاب بينفصلوا بخط عمودي."],["بار","السبابة نايمة على كذا وتر مع بعض. (درس 29)"],
+  ["كابو","مشبك بتحطّه على فريت فبيرفع كل الأوتار مع بعض، عشان تعزف بنفس المسكات بطبقة أعلى."],["هامر / بول","نغمة بالإيد الشمال بس: بتضرب الإصبع (هامر) أو بتشدّه عن الوتر (بول)."],
+  ["مقسوم / بلدي","إيقاعات عربية مشهورة: «دم تك _ تك دم _ تك _». (الوحدة D)"],["دوزان","إنك تضبط كل وتر على نغمته الصح. (درس 3)"],["A–B","تحدّد مقطع صغير صعب ويتكرّر لحاله لحد ما يزبط."]];
 function renderHelp(){
   view.innerHTML=`${crumb("<span>عيادة المشاكل</span>")}
   <div class="uh"><span class="tag">عيادة المشاكل</span><h2>شو المشكلة؟</h2><p>اختار اللي عم يصير معك، وبتعرف السبب والحل.</p></div><div class="w-diag"></div>
@@ -47,7 +59,9 @@ function renderHelp(){
   <tr><td class="m">5 د</td><td>دوزان بالمايك + الكروماتيك (درس 10)</td><td>تسخين وتنسيق بين الإيدين</td></tr>
   <tr><td class="m">10 د</td><td>الدرس الحالي بوضع «بستنّاك» أو «هو بيعزف وبعدين أنا»</td><td>هون بيصير التطوّر الحقيقي</td></tr>
   <tr><td class="m">5 د</td><td>تمرين الدقيقة على أصعب زوج كوردات</td><td>أسرع طريق للأغاني</td></tr>
-  <tr><td class="m">10 د</td><td>أغنية من المكتبة، وحدّد الجزء الصعب بـ A–B</td><td>عشان تضل مبسوط وما تزهق</td></tr></table></div>${FOOT}`;
+  <tr><td class="m">10 د</td><td>أغنية من المكتبة، وحدّد الجزء الصعب بـ A–B</td><td>عشان تضل مبسوط وما تزهق</td></tr></table></div>
+  <div class="uh" style="margin-top:48px"><span class="tag">قاموس صغير</span><h2>الكلمات اللي رح تسمعها كتير</h2></div>
+  <dl class="gloss">${GLOSS.map(([t,d])=>`<div><dt>${t}</dt><dd>${d}</dd></div>`).join("")}</dl>${FOOT}`;
   W.diag(view.querySelector(".w-diag"));
 }
 
@@ -72,7 +86,11 @@ function route(){
   window.scrollTo(0,0);
 }
 view.addEventListener("change",e=>{const l=e.target.dataset.l;if(l){done[l]=e.target.checked;save();if(done[l])markLearned(l)}});
-view.addEventListener("cm40-pass",e=>{const art=e.target.closest(".lesson");if(!art||!ALL.find(x=>x.id===art.id))return;done[art.id]=true;save();markLearned(art.id);const cb=art.querySelector("input[data-l]");if(cb)cb.checked=true});
+view.addEventListener("cm40-pass",e=>{const art=e.target.closest(".lesson"),l=art&&ALL.find(x=>x.id===art.id);if(!l)return;
+  // the note check only records itself; only the rhythm exam at target speed marks the lesson mastered
+  const kind=(e.detail||{}).kind;setSt(l.id,kind==="rhy"?"rhy":"notes",1);
+  if(kind==="rhy"){done[l.id]=true;save();markLearned(l.id);const cb=art.querySelector("input[data-l]");if(cb)cb.checked=true}
+  art.querySelector(".mwrap").innerHTML=mastery(l)});
 view.addEventListener("click",e=>{const b=e.target.closest(".rate .chip");if(!b)return;const art=b.closest(".lesson");rateLesson(art.id,b.dataset.r);art.querySelectorAll(".rate .chip").forEach(x=>x.classList.toggle("on",x===b));
   art.querySelector(".rmsg").textContent={easy:"تمام، رح نراجعه أقل.",ok:"تمام، رح يرجعلك مراجعة بعد كم يوم.",hard:"رح يرجعلك بتمرين اليوم. ابدأ بتمرين «١ سهل» على ٦٠%."}[b.dataset.r]});
 addEventListener("hashchange",route);
