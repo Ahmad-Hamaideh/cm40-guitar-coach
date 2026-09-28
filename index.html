@@ -226,9 +226,10 @@ a.btn{text-decoration:none}
 .gvh .gcams{margin-bottom:8px}
 .gstage{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;background:#1E1A16;border-radius:12px;padding:10px;overflow:hidden}
 .gstage svg{display:block;width:100%;height:auto;min-width:0}
+.gsub{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.gside,.grhv{max-height:240px;border-radius:8px;background:#15110E}
 .gstage .grhv{display:none}
-.gstage.zoom{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);align-items:center}
-.gstage.zoom .grhv{display:block;max-height:260px}
+.gstage.zoom .grhv{display:block}
 .chead{min-height:2.4rem;margin-top:4px}
 .cturn{background:var(--warn);color:var(--dot-ink);font-weight:700;padding:2px 12px;border-radius:14px}
 .lane{cursor:pointer}
@@ -239,7 +240,7 @@ a.btn{text-decoration:none}
 .mtg{width:220px;max-width:100%}
 .mtr{display:grid;gap:2px;min-width:150px;text-align:center}
 .mtn{font-size:1.5rem}
-@media (max-width:700px){.gstage.zoom{grid-template-columns:minmax(0,1fr)}.gstage.zoom .grhv{max-height:170px}.gstage{padding:6px}.lesson h2{font-size:1.35rem}}
+@media (max-width:700px){.gstage{padding:6px}.gside,.grhv{max-height:200px}.lesson h2{font-size:1.35rem}}
 </style>
 </head>
 <body>
