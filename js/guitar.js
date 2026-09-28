@@ -96,7 +96,7 @@ function ik2(ax,ay,bx,by,l1,l2){
 // Cross-section of the neck at the hand: strings as dots, fingers arching down onto them
 function sideSVG(m,bar,harm){
   const X=s=>82+(6-s)*24,by=112;  // ≈2.7 px per mm, so finger lengths stay true
-  let s=`<rect width="360" height="236" fill="#15110E"/><text x="180" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#DCCBAE">من الجنب: شوف قوس الأصابع</text>`;
+  let s=`<rect width="360" height="236" fill="#0E1320"/><text x="180" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#DCCBAE">من الجنب: شوف قوس الأصابع</text>`;
   s+=`<path d="M66,${by+12} Q142,${by+100} 218,${by+12}Z" fill="#8C5B34"/><rect x="66" y="${by}" width="152" height="13" rx="3" fill="#3A2618"/>`;
   s+=`<ellipse cx="150" cy="${by+74}" rx="26" ry="14" fill="${SKIN.base}" stroke="${SKIN.line}" stroke-width="2"/><text x="150" y="${by+108}" text-anchor="middle" font-size="11" fill="#CDBFA6">الإبهام ورا الرقبة</text>`;
   

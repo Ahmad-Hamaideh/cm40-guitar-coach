@@ -1,0 +1,144 @@
+// Chord library, song library, today's practice, progress and ear training.
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const LSset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const dayKey=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+function logPractice(sec){if(sec<5)return;const log=LS("cm40-log",{}),k=dayKey(new Date());log[k]=Math.round(((log[k]||0)+sec/60)*10)/10;LSset("cm40-log",log)}
+function streak(){const log=LS("cm40-log",{});let n=0,d=new Date();if(!log[dayKey(d)])d=new Date(d-864e5);while(log[dayKey(d)]){n++;d=new Date(d-864e5)}return n}
+const crumb=h=>`<nav class="crumb"><a href="#/">الرئيسية</a><span>›</span>${h}</nav>`;
+const mountFig=(host,f)=>{const d=document.createElement("div");d.className="fig";host.appendChild(d);if(typeof f==="string")d.innerHTML=f;else W[f.w](d,f.cfg||{});return d};
+
+// ---------- chords ----------
+const LIB=["Em","Am","E","A","Dm","D","E7","C","G","Fmaj7","B7","F","Bm"];
+const LVL={Em:1,Am:1,E:1,A:1,Dm:1,D:1,E7:1,C:2,G:2,Fmaj7:2,B7:2,F:3,Bm:3},LVLN=["","سهل","متوسط","بار"];
+const chordLessons=c=>ALL.filter(l=>lessonChords(l).includes(c));
+const chordNotes=c=>[...new Set(CH[c].f.map((f,i)=>f<0?null:NOTE_EN[(OPEN_MIDI[5-i]+f)%12]).filter(Boolean))].map(n=>NOTE_AR[n]?`${NOTE_AR[n]} (${n})`:n);
+const nearChords=c=>{const a=CH[c];return LIB.filter(x=>x!==c).map(x=>{const b=CH[x];let k=0;a.f.forEach((f,i)=>{if(f>0&&b.f[i]===f&&a.g[i]===b.g[i])k++});return [x,k]}).filter(x=>x[1]).sort((p,q)=>q[1]-p[1]).slice(0,4).map(x=>x[0])};
+const sideOf=c=>{const ch=CH[c],m={};ch.f.forEach((f,i)=>{const g=ch.g[i];if(g&&f>0&&!(ch.barre&&g===1&&f===ch.barre))m[g]=[6-i,f]});return `<svg viewBox="0 0 360 236">${sideSVG(m,ch.barre?{fr:ch.barre,bf:ch.bf}:null,false)}</svg>`};
+
+function renderChords(view){
+  view.innerHTML=`${crumb("<span>مكتبة الكوردات</span>")}<div class="uh"><span class="tag">مكتبة الكوردات</span><h2>كل كورد بالإيد والصوت</h2><p>اضغط «اسمع» لتسمعه، أو افتحه لتشوف الإيدين وهم بيعزفوه، ومعه كوردات قريبة منه تتمرّن تتنقّل بينهم.</p></div>
+  <div class="ctrl"><input type="search" class="csearch" placeholder="دوّر: Am، صغير، بار…" aria-label="دوّر على كورد"><div class="pats cf">${["الكل","سهل","متوسط","بار"].map((t,i)=>`<button class="chip${i?"":" on"}" data-l="${i}">${t}</button>`).join("")}</div></div>
+  <div class="libgrid">${LIB.map(c=>`<article class="lcard" data-c="${c}" data-l="${LVL[c]}" data-s="${c.toLowerCase()} ${CH[c].ar} ${LVLN[LVL[c]]}"><header><b class="mono">${c}</b><span class="meta">${CH[c].ar}</span><span class="lv l${LVL[c]}">${LVLN[LVL[c]]}</span></header><div class="lpics">${chordSVG(CH[c])}${sideOf(c)}</div><div class="ctrl"><button class="btn ghost lplay">▶ اسمع</button><a class="btn" href="#/chords/${c}">افتح مع المدرّب</a></div></article>`).join("")}</div>`;
+  let lv=0,q="";const cards=[...view.querySelectorAll(".lcard")];
+  const filt=()=>cards.forEach(k=>k.hidden=(lv&&+k.dataset.l!==lv)||(q&&!k.dataset.s.includes(q)));
+  view.querySelector(".csearch").oninput=e=>{q=e.target.value.trim().toLowerCase();filt()};
+  view.querySelector(".cf").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;lv=+b.dataset.l;view.querySelectorAll(".cf .chip").forEach(x=>x.classList.toggle("on",x===b));filt()};
+  view.querySelectorAll(".lplay").forEach(b=>b.onclick=()=>{loadSamples();strum(CH[b.closest(".lcard").dataset.c])});
+}
+function renderChord(view,c){
+  if(!LIB.includes(c))return renderChords(view);
+  const ls=chordLessons(c),nr=nearChords(c);
+  view.innerHTML=`${crumb(`<a href="#/chords">مكتبة الكوردات</a><span>›</span><span>${c}</span>`)}
+  <article class="lesson"><header class="lh"><h2 class="mono">${c}</h2><span class="meta">${CH[c].ar} · ${LVLN[LVL[c]]}</span></header><div class="figs"></div>
+  <div class="cols"><div><h4>النغمات جوّا الكورد</h4><p>${chordNotes(c).join("، ")}</p><h4 style="margin-top:12px">من وين بتبلّش الضربة</h4><p>من الوتر ${BASS[c]}${BASS[c]<6?`، والأوتار ${[6,5,4].filter(s=>s>BASS[c]).join(" و ")} لا تعزفها`:"، وكل الأوتار بترن"}.</p></div>
+  <div><h4>كوردات قريبة منه</h4><div class="pats">${nr.map(x=>`<a class="chip" href="#/chords/${x}">${x}</a>`).join("")||"<span class='meta'>ما في كورد بيشاركه أصابع</span>"}</div><h4 style="margin-top:12px">بأي دروس</h4><div class="pats">${ls.map(l=>`<a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a>`).join("")}</div></div></div></article>`;
+  const figs=view.querySelector(".figs");
+  mountFig(figs,{w:"coach",cfg:{tracks:[{n:"ضرب",bpm:70,ev:patEv([[c],[c]],P4),d:"٤ ضربات لتحت. شوف الأصابع من فوق ومن الجنب."},{n:"أربيج",bpm:70,ev:arpEv([c,c],[["B","p"],[3,"i"],[2,"m"],[1,"a"]]),d:"وتر وتر: إذا في وتر مكتوم عندك، بتسمع الفرق هون."}]}});
+  if(nr.length)mountFig(figs,{w:"sw",cfg:{pairs:nr.slice(0,3).map(x=>[c,x])}});
+}
+
+// ---------- songs ----------
+const SONGS=[
+  {id:"ode",t:"نشيد الفرح",by:"بيتهوفن",lvl:1,kind:"لحن",lesson:"n9"},
+  {id:"etude",t:"دراسة على النهاوند",by:"المدرّب",lvl:2,kind:"أربيج",lesson:"n27"},
+  {id:"kan",t:"كان عنّا طاحون",by:"فيروز",lvl:2,kind:"كوردات · مقسوم",lesson:"n16",src:V.kan},
+  {id:"nassam1",t:"نسّم علينا الهوى (أول سطر)",by:"فيروز",lvl:2,kind:"كوردات · بلدي",lesson:"n21",src:V.nassam},
+  {id:"romanza",t:"Romanza (البداية)",by:"مجهول",lvl:3,kind:"كلاسيك",lesson:"n22",src:V.rom},
+  {id:"eastern",t:"Em Am B7 Em",by:"تسلسل شرقي",lvl:3,kind:"كوردات",lesson:"n30"},
+  {id:"nassam",t:"نسّم علينا الهوى (كاملة)",by:"فيروز",lvl:3,kind:"كوردات بالـ F",lesson:"n32",src:V.nassam},
+  {id:"anda",t:"الكادانس الأندلسي",by:"فلامنكو",lvl:4,kind:"رازغيادو",lesson:"n34"},
+];
+const songLesson=s=>ALL.find(x=>x.id===s.lesson);
+const songCoach=s=>{const f=songLesson(s).figs.find(f=>f.w==="coach");return f&&f.cfg};
+const stars=n=>`<span class="stars" aria-label="الصعوبة ${n} من 4">${[1,2,3,4].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</span>`;
+function renderSongs(view){
+  view.innerHTML=`${crumb("<span>مكتبة الأغاني</span>")}<div class="uh"><span class="tag">مكتبة الأغاني</span><h2>أغاني ومقطوعات مع المدرّب</h2><p>مرتّبة من الأسهل للأصعب. كل وحدة إلها الدرس اللي بيحضّرك إلها.</p></div>
+  <div class="songgrid">${SONGS.map(s=>{const l=songLesson(s),ok=ALL.slice(0,l.no-1).every(x=>done[x.id])||done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p>${stars(s.lvl)}<div class="pats">${lessonChords(l).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
+}
+function renderSong(view,id){
+  const s=SONGS.find(x=>x.id===id);if(!s)return renderSongs(view);
+  const l=songLesson(s),chs=lessonChords(l);
+  view.innerHTML=`${crumb(`<a href="#/songs">مكتبة الأغاني</a><span>›</span><span>${s.t}</span>`)}
+  <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><div class="figs"></div>
+  <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${c}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>
+  <div><h4>الدرس اللي بيحضّرك</h4><div class="pats"><a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a></div>${s.src?`<h4 style="margin-top:12px">المصدر</h4><div class="vids"><a href="${s.src[1]}" target="_blank" rel="noopener">${ICON_PLAY}${s.src[0]}</a></div>`:""}</div></div></article>`;
+  mountFig(view.querySelector(".figs"),{w:"coach",cfg:songCoach(s)});
+}
+
+// ---------- today's practice ----------
+function sessionPlan(){
+  const next=ALL.find(l=>!done[l.id])||ALL[ALL.length-1],reached=ALL.slice(0,next.no);
+  const coachOf=id=>ALL.find(x=>x.id===id).figs.find(f=>f.w==="coach");
+  const steps=[{t:"تسخين: الكروماتيك",min:5,fig:coachOf("n10"),why:"الأصابع الأربعة والإيدين مع بعض."}];
+  steps.push({t:`الدرس الحالي: ${next.no}. ${next.t}`,min:10,fig:next.figs.find(f=>f.w==="coach")||next.figs.find(f=>typeof f!=="string")||next.figs[0],why:next.goal,link:next.id});
+  const pairs=[];reached.forEach(l=>l.figs.forEach(f=>{if(f.w==="sw")pairs.push(...f.cfg.pairs)}));
+  if(pairs.length){const best=LS("cm40-best",{});pairs.sort((a,b)=>(best[a.join("-")]||0)-(best[b.join("-")]||0));steps.push({t:"تبديل كوردات",min:5,fig:{w:"sw",cfg:{pairs:pairs.slice(0,3)}},why:"الأزواج اللي رقمها الأبطأ عندك."})}
+  const ready=SONGS.filter(s=>songLesson(s).no<=next.no),song=ready[ready.length-1]||SONGS[0];
+  steps.push({t:`أغنية: ${song.t}`,min:10,fig:{w:"coach",cfg:songCoach(song)},why:"عشان تضل مبسوط وما تزهق."});
+  return steps;
+}
+function renderToday(view){
+  const steps=sessionPlan(),total=steps.reduce((a,s)=>a+s.min,0);let i=0,left=0,iv=null,spent=0;
+  view.innerHTML=`${crumb("<span>تمرين اليوم</span>")}<div class="uh"><span class="tag">تمرين اليوم · ${total} دقيقة</span><h2>جلسة اليوم جاهزة</h2><p>مبنية على الدروس اللي خلّصتها. كل خطوة إلها وقت، واعمل وحدة وحدة.</p></div>
+  <ol class="tsteps">${steps.map((s,k)=>`<li data-k="${k}"><b>${s.t}</b><span class="meta">${s.min} د</span></li>`).join("")}</ol>
+  <section class="tnow"><header class="lh"><h3 class="tt"></h3><span class="meta tw"></span></header><div class="timer"><b class="big mono tm"></b><button class="btn tgo">ابدأ المؤقّت</button><button class="btn ghost tnx">خلّصت، الجاية</button></div><div class="figs"></div></section>`;
+  const tm=view.querySelector(".tm"),tgo=view.querySelector(".tgo"),figs=view.querySelector(".figs");
+  const fmt=s=>`${Math.floor(s/60)}:${String(Math.max(0,s)%60).padStart(2,"0")}`;
+  const stopT=()=>{clearInterval(iv);iv=null;tgo.textContent="كمّل المؤقّت"};
+  const load=()=>{
+    stopAll();stopT();const s=steps[i];left=s.min*60;tm.textContent=fmt(left);tgo.textContent="ابدأ المؤقّت";
+    view.querySelectorAll(".tsteps li").forEach(li=>{const k=+li.dataset.k;li.classList.toggle("on",k===i);li.classList.toggle("ok",k<i)});
+    view.querySelector(".tt").textContent=s.t;view.querySelector(".tw").innerHTML=s.why+(s.link?` · <a href="#/l/${s.link}">افتح الدرس</a>`:"");
+    figs.innerHTML="";mountFig(figs,s.fig);
+  };
+  tgo.onclick=()=>{if(iv){stopT();return}tgo.textContent="وقّف المؤقّت";iv=setInterval(()=>{left--;spent++;tm.textContent=fmt(left);if(left<=0){stopT();click(ac().currentTime,true);tm.textContent="خلص الوقت!"}},1000)};
+  view.querySelector(".tnx").onclick=()=>{stopT();logPractice(spent);spent=0;i++;
+    if(i<steps.length)return load();
+    stopAll();view.querySelector(".tnow").innerHTML=`<div class="qdone"><b>كفو!</b><p>خلّصت تمرين اليوم. صرلك ${streak()||1} يوم ورا بعض.</p><a class="btn" href="#/progress">شوف تقدّمك</a></div>`;
+    view.querySelectorAll(".tsteps li").forEach(li=>li.classList.add("ok"))};
+  view.querySelector(".tsteps").onclick=e=>{const li=e.target.closest("li");if(!li)return;stopT();logPractice(spent);spent=0;i=+li.dataset.k;load()};
+  STOP.add(()=>{if(iv){stopT();logPractice(spent);spent=0}});
+  load();
+}
+
+// ---------- progress ----------
+function renderProgress(view){
+  const log=LS("cm40-log",{}),mins=Object.values(log).reduce((a,b)=>a+b,0),n=ALL.filter(l=>done[l.id]).length,qz=LS("cm40-quiz",{}),best=LS("cm40-best",{}),ear=LS("cm40-ear",{});
+  const tiles=[[streak(),"يوم ورا بعض"],[Math.round(mins),"دقيقة تمرين"],[`${n}/${ALL.length}`,"درس خلّصته"],[Object.values(qz).reduce((a,b)=>a+b,0),"جواب صح"]];
+  const W7=12,cells=[];const d0=new Date();d0.setDate(d0.getDate()-(W7*7-1));
+  for(let k=0;k<W7*7;k++){const d=new Date(d0);d.setDate(d0.getDate()+k);const m=log[dayKey(d)]||0;cells.push([k,m,dayKey(d)])}
+  const col=m=>!m?"var(--soft)":m<10?"#2E6A66":m<20?"#4FB3A9":"#E6B04B";
+  const heat=`<svg viewBox="0 0 ${W7*22+40} ${7*22+10}" class="heat" role="img" aria-label="أيام التمرين آخر ${W7} أسبوع">${cells.map(([k,m,dk])=>`<rect x="${Math.floor(k/7)*22}" y="${(k%7)*22}" width="18" height="18" rx="4" fill="${col(m)}"><title>${dk}: ${m} دقيقة</title></rect>`).join("")}</svg>`;
+  const pairs=Object.entries(best).sort((a,b)=>b[1]-a[1]).slice(0,8),bw=300;
+  const chart=pairs.length?`<svg viewBox="0 0 ${bw+120} ${pairs.length*30+20}" class="bars" role="img" aria-label="أحسن أرقام تبديل الكوردات">${pairs.map(([k,v],i)=>`<text x="0" y="${i*30+20}" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono,monospace">${k.replace("-"," ↔ ")}</text><rect x="100" y="${i*30+6}" width="${Math.min(v,80)/80*bw}" height="18" rx="4" fill="${v>=60?"#E6B04B":"#4FB3A9"}"/><text x="${104+Math.min(v,80)/80*bw}" y="${i*30+20}" font-size="12" fill="var(--muted)">${v}</text>`).join("")}<line x1="${100+60/80*bw}" y1="0" x2="${100+60/80*bw}" y2="${pairs.length*30+10}" stroke="#E6B04B" stroke-dasharray="4 4"/></svg>`:`<p class="meta">اعمل تمرين الدقيقة (درس 14) وبيطلعلك رسم بياني هون.</p>`;
+  view.innerHTML=`${crumb("<span>تقدّمي</span>")}<div class="uh"><span class="tag">تقدّمي</span><h2>شو عملت لحد هلأ</h2></div>
+  <div class="tiles">${tiles.map(([v,t])=>`<div class="tile"><b class="mono">${v}</b><span>${t}</span></div>`).join("")}</div>
+  <div class="pgrid"><section class="pcard"><h3>أيام التمرين</h3><p class="meta">آخر ${W7} أسبوع. كل مربّع يوم، وكل ما كان أغمق ذهبي يعني تمرّنت أكتر.</p>${heat}</section>
+  <section class="pcard"><h3>تبديل الكوردات (بالدقيقة)</h3><p class="meta">الخط الذهبي = ٦٠، الهدف.</p>${chart}</section>
+  <section class="pcard"><h3>الوحدات</h3>${UNITS.map(u=>{const d=u.lessons.filter(l=>done[l.id]).length;return `<div class="urow"><span>${u.id} · ${u.name}</span><div class="bar"><i style="width:${d/u.lessons.length*100}%"></i></div><span class="mono">${d}/${u.lessons.length}</span></div>`}).join("")}</section>
+  <section class="pcard"><h3>تدريب الأذن</h3>${Object.keys(EAR).map(k=>`<div class="urow"><span>${EAR[k].n}</span><span class="mono">${ear[k]||0}</span><span class="meta">أحسن سلسلة صح</span></div>`).join("")}</section></div>`;
+}
+
+// ---------- ear training ----------
+const EAR={
+  mm:{n:"كبير ولا صغير؟",q:"اسمع الكورد: كبير (فرحان) ولا صغير (حزين)؟",make(R){const p=[["E","كبير"],["A","كبير"],["D","كبير"],["C","كبير"],["G","كبير"],["Em","صغير"],["Am","صغير"],["Dm","صغير"],["Bm","صغير"]][Math.floor(R()*9)];return {play:()=>strum(CH[p[0]],"D",.35),opts:["كبير","صغير"],a:p[1],info:`كان ${p[0]}`}}},
+  iv:{n:"شو المسافة؟",q:"اسمع نغمتين ورا بعض. قديش البعد بينهم؟",make(R){const IV=[[1,"نص تون"],[2,"تون"],[3,"ثالثة صغيرة"],[4,"ثالثة كبيرة"],[7,"خامسة"],[12,"أوكتاف"]],p=IV[Math.floor(R()*IV.length)],b=48+Math.floor(R()*12);
+    const o=new Set([p[1]]);while(o.size<4)o.add(IV[Math.floor(R()*IV.length)][1]);return {play:()=>{playMidi(b,0,.55);playMidi(b+p[0],.8,.55)},opts:[...o].sort(()=>R()-.5),a:p[1],info:`${p[0]} فريت`}}},
+  st:{n:"أي وتر؟",q:"اسمع الوتر المفتوح. أي وتر هاد؟",make(R){const s=1+Math.floor(R()*6);return {play:()=>playSF(s,0,.6),opts:[6,5,4,3,2,1].map(x=>`وتر ${x} (${SNAME[x-1]})`),a:`وتر ${s} (${SNAME[s-1]})`,info:""}}},
+};
+function renderEar(view){
+  let g="mm",cur=null,run=0,score=0,tries=0;const best=LS("cm40-ear",{}),R=rng(Date.now()%2147483647||7);
+  view.innerHTML=`${crumb("<span>تدريب الأذن</span>")}<div class="uh"><span class="tag">تدريب الأذن</span><h2>درّب أذنك</h2><p>الأذن أهم أداة عند العازف. العب كم دقيقة كل يوم.</p></div>
+  <div class="pats eg">${Object.entries(EAR).map(([k,v],i)=>`<button class="chip${i?"":" on"}" data-g="${k}">${v.n}</button>`).join("")}</div>
+  <section class="earbox"><div class="eart">${ICO.ear}</div><p class="eq"></p><button class="btn big eplay">▶ اسمع</button><div class="qopts eopts"></div><p class="efb"></p><p class="meta es"></p></section>`;
+  const eq=view.querySelector(".eq"),eo=view.querySelector(".eopts"),fb=view.querySelector(".efb"),es=view.querySelector(".es");
+  const stat=()=>es.textContent=`صح ${score} من ${tries} · سلسلة صح: ${run} · أحسن سلسلة: ${best[g]||0}`;
+  const nextQ=()=>{cur=EAR[g].make(R);eq.textContent=EAR[g].q;fb.textContent="";eo.innerHTML=cur.opts.map((o,k)=>`<button class="qo" data-k="${k}">${o}</button>`).join("");stat()};
+  view.querySelector(".eplay").onclick=()=>{loadSamples();cur.play()};
+  eo.onclick=e=>{const b=e.target.closest(".qo");if(!b||eo.querySelector(".good"))return;const ok=cur.opts[+b.dataset.k]===cur.a;tries++;
+    if(ok){score++;run++;if(run>(best[g]||0)){best[g]=run;LSset("cm40-ear",best)}}else run=0;
+    eo.querySelectorAll(".qo").forEach(x=>{if(cur.opts[+x.dataset.k]===cur.a)x.classList.add("good");else if(x===b)x.classList.add("badc")});
+    fb.innerHTML=(ok?"صح! ":"لا. ")+(cur.info?`(${cur.info}) `:"")+`<button class="btn ghost enx">السؤال الجاي</button>`;view.querySelector(".enx").onclick=()=>{nextQ();cur.play()};stat()};
+  view.querySelector(".eg").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;g=b.dataset.g;run=0;score=0;tries=0;view.querySelectorAll(".eg .chip").forEach(x=>x.classList.toggle("on",x===b));nextQ()};
+  nextQ();
+}

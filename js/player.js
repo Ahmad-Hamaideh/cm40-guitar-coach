@@ -36,7 +36,8 @@ W.coach=(el,cfg)=>{
     (e.n||[]).forEach(([s,f])=>{let m=OPEN_MIDI[s-1]+(e.h?0:f);if(e.h)m+=({12:12,7:19,5:24})[f]||0;playMidi(m,rel,e.sl?.32:.5,e.h?{cut:4000,dur:3.5}:{})});
   };
 
-  const stop=()=>{playing=false;clearInterval(sched);sched=null;vq=[];btn.textContent="▶ خلّيه يعزف";turnEl.hidden=true};
+  let tStart=0;
+  const stop=()=>{if(playing)logPractice(ac().currentTime-tStart);playing=false;clearInterval(sched);sched=null;vq=[];btn.textContent="▶ خلّيه يعزف";turnEl.hidden=true};
   const schedule=()=>{
     const c=ac(),lo=A??0,hi=B??N-1;
     while(playing&&nextT<c.currentTime+.15){
@@ -60,7 +61,7 @@ W.coach=(el,cfg)=>{
   };
   const play=()=>{
     stopAll();if(waitOn)endWait();loadSamples();
-    const c=ac();playing=true;btn.textContent="■ وقّف";
+    const c=ac();playing=true;tStart=c.currentTime;btn.textContent="■ وقّف";
     idx=cur>=N-1?0:cur;if(A!=null&&(idx<A||idx>B))idx=A;
     let t=c.currentTime+.15;
     if(cin.checked){const bb=tracks[ti].bar||4;for(let b=0;b<bb;b++){click(t,b===0);vq.push({t,count:bb-b});t+=spb()}}
