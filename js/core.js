@@ -21,11 +21,13 @@ const CH={
   F:{f:[1,3,3,2,1,1],g:[1,3,4,2,1,1],ar:"فا بار",barre:1,bf:6},
   Bm:{f:[-1,2,4,4,3,2],g:[0,1,3,4,2,1],ar:"سي صغير",barre:2,bf:5},
   B7:{f:[-1,2,1,2,0,2],g:[0,2,1,3,0,4],ar:"سي سابع"},
+  "F#":{f:[2,4,4,3,2,2],g:[1,3,4,2,1,1],ar:"فا دييز (بار 2)",barre:2,bf:6},
+  Gm:{f:[3,5,5,3,3,3],g:[1,3,4,1,1,1],ar:"صول صغير (بار 3)",barre:3,bf:6},
   H5:{f:[-1,-1,-1,5,5,5],g:[0,0,0,1,1,1],ar:"نص بار 5",barre:5,bf:3},
   H7:{f:[-1,-1,-1,7,7,7],g:[0,0,0,1,1,1],ar:"نص بار 7",barre:7,bf:3},
   H8:{f:[-1,-1,-1,8,8,8],g:[0,0,0,1,1,1],ar:"نص بار 8",barre:8,bf:3},
 };
-const BASS={Em:6,E:6,E7:6,G:6,F:6,Am:5,A:5,C:5,B7:5,Bm:5,D:4,Dm:4,Fmaj7:4,H5:3,H7:3,H8:3};
+const BASS={"F#":6,Gm:6,Em:6,E:6,E7:6,G:6,F:6,Am:5,A:5,C:5,B7:5,Bm:5,D:4,Dm:4,Fmaj7:4,H5:3,H7:3,H8:3};
 
 let ctx;
 const ac=()=>{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume();return ctx};

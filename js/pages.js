@@ -8,8 +8,8 @@ const crumb=h=>`<nav class="crumb"><a href="#/">الرئيسية</a><span>›</s
 const mountFig=(host,f)=>{const d=document.createElement("div");d.className="fig";host.appendChild(d);if(typeof f==="string")d.innerHTML=f;else W[f.w](d,f.cfg||{});return d};
 
 // ---------- chords ----------
-const LIB=["Em","Am","E","A","Dm","D","E7","C","G","Fmaj7","B7","F","Bm"];
-const LVL={Em:1,Am:1,E:1,A:1,Dm:1,D:1,E7:1,C:2,G:2,Fmaj7:2,B7:2,F:3,Bm:3},LVLN=["","سهل","متوسط","بار"];
+const LIB=["Em","Am","E","A","Dm","D","E7","C","G","Fmaj7","B7","F","Bm","F#","Gm"];
+const LVL={Em:1,Am:1,E:1,A:1,Dm:1,D:1,E7:1,C:2,G:2,Fmaj7:2,B7:2,F:3,Bm:3,"F#":3,Gm:3},LVLN=["","سهل","متوسط","بار"];
 const chordLessons=c=>ALL.filter(l=>lessonChords(l).includes(c));
 const chordNotes=c=>[...new Set(CH[c].f.map((f,i)=>f<0?null:NOTE_EN[(OPEN_MIDI[5-i]+f)%12]).filter(Boolean))].map(n=>NOTE_AR[n]?`${NOTE_AR[n]} (${n})`:n);
 const nearChords=c=>{const a=CH[c];return LIB.filter(x=>x!==c).map(x=>{const b=CH[x];let k=0;a.f.forEach((f,i)=>{if(f>0&&b.f[i]===f&&a.g[i]===b.g[i])k++});return [x,k]}).filter(x=>x[1]).sort((p,q)=>q[1]-p[1]).slice(0,4).map(x=>x[0])};
@@ -18,7 +18,7 @@ const sideOf=c=>{const ch=CH[c],m={};ch.f.forEach((f,i)=>{const g=ch.g[i];if(g&&
 function renderChords(view){
   view.innerHTML=`${crumb("<span>مكتبة الكوردات</span>")}<div class="uh"><span class="tag">مكتبة الكوردات</span><h2>كل كورد بالإيد والصوت</h2><p>اضغط «اسمع» لتسمعه، أو افتحه لتشوف الإيدين وهم بيعزفوه، ومعه كوردات قريبة منه تتمرّن تتنقّل بينهم.</p></div>
   <div class="ctrl"><input type="search" class="csearch" placeholder="دوّر: Am، صغير، بار…" aria-label="دوّر على كورد"><div class="pats cf">${["الكل","سهل","متوسط","بار"].map((t,i)=>`<button class="chip${i?"":" on"}" data-l="${i}">${t}</button>`).join("")}</div></div>
-  <div class="libgrid">${LIB.map(c=>`<article class="lcard" data-c="${c}" data-l="${LVL[c]}" data-s="${c.toLowerCase()} ${CH[c].ar} ${LVLN[LVL[c]]}"><header><b class="mono">${c}</b><span class="meta">${CH[c].ar}</span><span class="lv l${LVL[c]}">${LVLN[LVL[c]]}</span></header><div class="lpics">${chordSVG(CH[c])}${sideOf(c)}</div><div class="ctrl"><button class="btn ghost lplay">▶ اسمع</button><a class="btn" href="#/chords/${c}">افتح مع المدرّب</a></div></article>`).join("")}</div>`;
+  <div class="libgrid">${LIB.map(c=>`<article class="lcard" data-c="${c}" data-l="${LVL[c]}" data-s="${c.toLowerCase()} ${CH[c].ar} ${LVLN[LVL[c]]}"><header><b class="mono">${c}</b><span class="meta">${CH[c].ar}</span><span class="lv l${LVL[c]}">${LVLN[LVL[c]]}</span></header><div class="lpics">${chordSVG(CH[c])}${sideOf(c)}</div><div class="ctrl"><button class="btn ghost lplay">▶ اسمع</button><a class="btn" href="#/chords/${encodeURIComponent(c)}">افتح مع المدرّب</a></div></article>`).join("")}</div>`;
   let lv=0,q="";const cards=[...view.querySelectorAll(".lcard")];
   const filt=()=>cards.forEach(k=>k.hidden=(lv&&+k.dataset.l!==lv)||(q&&!k.dataset.s.includes(q)));
   view.querySelector(".csearch").oninput=e=>{q=e.target.value.trim().toLowerCase();filt()};
@@ -31,7 +31,7 @@ function renderChord(view,c){
   view.innerHTML=`${crumb(`<a href="#/chords">مكتبة الكوردات</a><span>›</span><span>${c}</span>`)}
   <article class="lesson"><header class="lh"><h2 class="mono">${c}</h2><span class="meta">${CH[c].ar} · ${LVLN[LVL[c]]}</span></header><div class="figs"></div>
   <div class="cols"><div><h4>النغمات جوّا الكورد</h4><p>${chordNotes(c).join("، ")}</p><h4 style="margin-top:12px">من وين بتبلّش الضربة</h4><p>من الوتر ${BASS[c]}${BASS[c]<6?`، والأوتار ${[6,5,4].filter(s=>s>BASS[c]).join(" و ")} لا تعزفها`:"، وكل الأوتار بترن"}.</p></div>
-  <div><h4>كوردات قريبة منه</h4><div class="pats">${nr.map(x=>`<a class="chip" href="#/chords/${x}">${x}</a>`).join("")||"<span class='meta'>ما في كورد بيشاركه أصابع</span>"}</div><h4 style="margin-top:12px">بأي دروس</h4><div class="pats">${ls.map(l=>`<a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a>`).join("")}</div></div></div></article>`;
+  <div><h4>كوردات قريبة منه</h4><div class="pats">${nr.map(x=>`<a class="chip" href="#/chords/${encodeURIComponent(x)}">${x}</a>`).join("")||"<span class='meta'>ما في كورد بيشاركه أصابع</span>"}</div><h4 style="margin-top:12px">بأي دروس</h4><div class="pats">${ls.map(l=>`<a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a>`).join("")}</div></div></div></article>`;
   const figs=view.querySelector(".figs");
   mountFig(figs,{w:"coach",cfg:{tracks:[{n:"ضرب",bpm:70,ev:patEv([[c],[c]],P4),d:"٤ ضربات لتحت. شوف الأصابع من فوق ومن الجنب."},{n:"أربيج",bpm:70,ev:arpEv([c,c],[["B","p"],[3,"i"],[2,"m"],[1,"a"]]),d:"وتر وتر: إذا في وتر مكتوم عندك، بتسمع الفرق هون."}]}});
   if(nr.length)mountFig(figs,{w:"sw",cfg:{pairs:nr.slice(0,3).map(x=>[c,x])}});
@@ -60,6 +60,17 @@ const SONGS=[
    bars:[["Am"],["C"],["G"],["Dm"],["Am"],["Am"],["E"],["C"],["G"],["Dm"],["Am"],["Am"],["Dm"],["Am"],["G"],["C"],["E"],["C"],["G"],["Dm"],["F"],["Am"]],secs:{0:"المقدمة",12:"الغنا"}},
   {id:"nour",t:"نور العين",by:"عمرو دياب",lvl:3,kind:"إيقاع إسباني · كابو 3",capo:3,lesson:"n21",src:["نور العين على جيتارابيا","http://www.guitarabia.com/songs/2/nour-al-ain-arabic-tabs-and-chords"],
    bars:[["Am"],["Dm"],["Dm"],["E"],["Dm"],["E"],["Dm"],["E"],["Am"],["Dm"],["E"],["Am"],["Am"],["E"],["Dm"],["E"],["Dm"],["E"],["F"],["G"],["Am"],["E"],["Dm"],["Am"],["E"],["Dm"],["E"],["Am"]],secs:{0:"المقدمة",8:"الموسيقى",21:"مقطع",24:"اللازمة"}},
+
+  {id:"leila",t:"الليلة",by:"عمرو دياب",lvl:2,kind:"كوردات · إيقاع إسباني · كابو 3",capo:3,lesson:"n16",src:["الليلة على جيتارابيا","http://www.guitarabia.com/ar/2013/artists/amr-diab/%D8%A7%D9%84%D9%84%D9%8A%D9%84%D9%87/"],
+   bars:[["Am"],["Dm"],["Dm"],["E"],["Am"]]},
+  {id:"wmalo",t:"ومالو",by:"عمرو دياب",lvl:3,kind:"كوردات · كابو 7",capo:7,lesson:"n21",src:["ومالو على جيتارابيا","http://www.guitarabia.com/ar/2012/artists/amr-diab/%D9%88%D9%85%D8%A7%D9%84%D9%88/"],
+   bars:"Dm Am Dm G Dm C Am G E G Dm C Dm C Dm Am Dm Am G Dm Am E G Dm Am C C G Am E Dm F C G Am E F F Dm Am G Dm Am E Dm Am".split(" ").map(c=>[c]),secs:{0:"مقطع 1",14:"مقطع 2",26:"الجسر",32:"مقطع 3",37:"مقطع 4"}},
+  {id:"amarein",t:"قمرين",by:"عمرو دياب",lvl:3,kind:"كوردات · كابو 7",capo:7,lesson:"n21",src:["قمرين على جيتارابيا","https://www.guitarabia.com/songs/14/amarein-arabic-tabs-and-chords"],
+   bars:"Dm A F E C G Am Dm A Am F Am E7 Am F E7 Dm A".split(" ").map(c=>[c]),secs:{0:"مقطع",6:"اللازمة",13:"الموسيقى"}},
+  {id:"rasmaha",t:"رسمها",by:"عمرو دياب",lvl:4,kind:"كوردات بار (Bm و F#)",lesson:"n30",src:["رسمها على جيتارابيا","http://www.guitarabia.com/2016/artists/amr-diab/rasmaha/"],
+   bars:"Em Bm Em Bm Em F# Bm F# Em F# Bm Bm F# Em Bm F# Bm".split(" ").map(c=>[c])},
+  {id:"haneet",t:"حنّيت",by:"عمرو دياب",lvl:4,kind:"كوردات بار (Gm)",lesson:"n30",src:["حنّيت على جيتارابيا","https://www.guitarabia.com/songs/530/7anet-arabic-tabs-and-chords"],
+   bars:"A Dm A Dm A Gm A Gm A Dm A Dm A Gm A Gm A Dm A Dm A Dm A Dm A Gm A Gm A Dm A Dm A Dm A Dm A Gm A Gm".split(" ").reduce((a,c,i)=>(i%2?a[a.length-1].push(c):a.push([c]),a),[])},
 ];
 const songLesson=s=>ALL.find(x=>x.id===s.lesson);
 const songChords=s=>s.bars?[...new Set(s.bars.flat())]:lessonChords(songLesson(s));
@@ -84,7 +95,7 @@ function renderSong(view,id){
   const l=songLesson(s),chs=songChords(s);
   view.innerHTML=`${crumb(`<a href="#/songs">مكتبة الأغاني</a><span>›</span><span>${s.t}</span>`)}
   <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><div class="figs"></div>
-  <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${c}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>
+  <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${encodeURIComponent(c)}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>
   <div><h4>الدرس اللي بيحضّرك</h4><div class="pats"><a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a></div>${s.src?`<h4 style="margin-top:12px">المصدر</h4><div class="vids"><a href="${s.src[1]}" target="_blank" rel="noopener">${ICON_PLAY}${s.src[0]}</a></div>`:""}</div></div></article>`;
   mountFig(view.querySelector(".figs"),{w:"coach",cfg:songCoach(s)});
 }
