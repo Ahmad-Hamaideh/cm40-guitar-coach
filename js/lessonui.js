@@ -24,7 +24,16 @@ function miniFret(st,fr){
   return B.s+dot(x,y,fr||"0","var(--accent)","var(--accent-ink)",13)+`</svg>`;
 }
 const ARCH=()=>`<svg viewBox="0 0 360 236">${sideSVG({1:[2,1],2:[4,2],3:[3,2]},null,false)}</svg>`;
-function stepPic(t,l,chs){
+// hand-picked pictures for steps where the keyword match is not the best teacher
+const OPEN_STR=()=>{const B=fbBase(4);return B.s+[1,2,3,4,5,6].map(st=>{const [x,y]=B.pos(st,0);return dot(x,y,SNAME[st-1],"var(--accent)","var(--accent-ink)",12)}).join("")+`</svg>`};
+const NOTE_MAP=()=>{const B=fbBase(12);let s=B.s;[6,5].forEach(st=>{for(let f=0;f<=12;f++){const n=noteOf(st,f);if(NOTE_AR[n]){const [x,y]=B.pos(st,f);s+=dot(x,y,n,"var(--accent)","var(--accent-ink)",11)}}});return s+`</svg>`};
+const STAFF=`<svg viewBox="0 0 320 160">${[0,1,2,3,4].map(i=>`<line x1="20" y1="${40+i*20}" x2="220" y2="${40+i*20}" stroke="#F1EBDD" stroke-width="1.5"/><text x="250" y="${124-i*20}" font-size="14" fill="#E6B04B" font-family="IBM Plex Mono,monospace">${"EGBDF"[i]}</text>`).join("")}${[0,1,2,3].map(i=>`<text x="290" y="${114-i*20}" font-size="14" fill="#4FB3A9" font-family="IBM Plex Mono,monospace">${"FACE"[i]}</text>`).join("")}<ellipse cx="80" cy="120" rx="9" ry="7" fill="#E6B04B"/><ellipse cx="130" cy="80" rx="9" ry="7" fill="#E6B04B"/><ellipse cx="180" cy="50" rx="9" ry="7" fill="#4FB3A9"/><text x="250" y="150" font-size="11" fill="#A3AABB">خطوط</text><text x="286" y="150" font-size="11" fill="#A3AABB">فراغات</text></svg>`;
+const PICFIX={"1.1":()=>SVG_PARTS,"2.4":()=>SVG_POSTURE,"3.4":()=>SVG_TUNE5,"4.1":OPEN_STR,"4.2":OPEN_STR,"4.3":OPEN_STR,"4.6":OPEN_STR,
+  "5.2":()=>PAIR.wrist,"5.4":()=>SVG_STROKES,"5.5":()=>SVG_PIMA,"5.6":()=>SVG_PIMA,"6.4":()=>SVG_PIMA,"10.1":()=>SVG_HANDS,"11.3":()=>SVG_CHORDREAD,
+  "15.2":()=>ICO.strum,"15.3":()=>ICO.strum,"17.2":()=>SVG_PIMA,"22.1":()=>SVG_PIMA,"22.2":()=>SVG_PIMA,
+  "23.1":NOTE_MAP,"23.2":NOTE_MAP,"23.3":NOTE_MAP,"23.4":NOTE_MAP,"25.1":()=>STAFF,"25.2":()=>STAFF,"34.2":()=>SVG_RASG,"37.1":()=>SVG_SHIFT,"37.3":()=>SVG_SHIFT,"39.3":()=>SVG_LADDER};
+function stepPic(t,l,chs,i){
+  const fx=i!=null&&PICFIX[`${l.no}.${i+1}`];if(fx){const v=fx();return /^<svg viewBox="0 0 (\d+) (\d+)" style/.test(v)?`<div class="fbwrap">${v}</div>`:v}
   const plain=t.replace(/<[^>]+>/g,"");
   const cm=/E A D G B E/.test(plain)?[]:chs.filter(c=>new RegExp(`(^|[^A-Za-z])${c}($|[^A-Za-z0-9])`).test(plain));
   if(cm.length)return `<div class="chrow">${cm.slice(0,3).map(c=>`<div><b class="mono">${c}</b>${chordSVG(CH[c])}</div>`).join("")}</div>`;
@@ -58,7 +67,7 @@ function lessonBody(l,host){
   let best={};try{best=JSON.parse(localStorage.getItem("cm40-quiz"))||{}}catch(e){}
   host.innerHTML=`<div class="ltabs" role="tablist">${[["watch","شوف"],["learn","افهم"],["warn","انتبه"],["quiz","اتأكد"]].map(([k,t],i)=>`<button role="tab" class="${i?"":"on"}" data-t="${k}">${t}${k==="quiz"&&best[l.id]!=null?` <small class="mono">${best[l.id]}/${qs.length}</small>`:""}</button>`).join("")}</div>
   <section class="lt" data-t="watch"><div class="figs"></div><div class="trick"><b>تريك:</b> ${l.trick}</div></section>
-  <section class="lt" data-t="learn" hidden><div class="slides">${l.steps.map((s,i)=>`<div class="slide"${i?" hidden":""}><div class="spic">${stepPic(s,l,chs)}</div><div class="stext"><span class="sn mono">${i+1} / ${l.steps.length}</span><p>${s}</p></div></div>`).join("")}</div>
+  <section class="lt" data-t="learn" hidden><div class="slides">${l.steps.map((s,i)=>`<div class="slide"${i?" hidden":""}><div class="spic">${stepPic(s,l,chs,i)}</div><div class="stext"><span class="sn mono">${i+1} / ${l.steps.length}</span><p>${s}</p></div></div>`).join("")}</div>
     <div class="snav"><button class="btn ghost sp">السابقة</button><span class="sdots">${l.steps.map((_,i)=>`<i class="${i?"":"on"}"></i>`).join("")}</span><button class="btn sn2">الجاية</button></div></section>
   <section class="lt" data-t="warn" hidden><div class="mgrid">${l.mist.map(([x,o])=>{const p=pickPair(x+" "+o)||stepPic(o,l,chs);return `<div class="mcard">${p?`<div class="mpic">${p}</div>`:""}<p class="x">✗ ${x}</p><p class="ok">✓ ${o}</p></div>`}).join("")}</div></section>
   <section class="lt" data-t="quiz" hidden><p class="meta">٣ أسئلة سريعة، اختيارية. بتساعدك تتأكد إنك فهمت.</p><div class="quiz"></div></section>`;

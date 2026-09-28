@@ -32,7 +32,8 @@ function renderLesson(l){
   <article class="lesson" id="${l.id}"><header class="lh"><span class="ln">درس ${l.no}</span><h2>${l.t}</h2><span class="meta">${l.m} دقيقة</span></header>
     <p class="goal"><b>الهدف:</b> ${l.goal}</p><div class="lbody"></div>
     <div class="foot"><div class="vids">${l.vids.length?l.vids.map(([t,h])=>`<a href="${h}" target="_blank" rel="noopener">${ICON_PLAY}${t}</a>`).join(""):`<span class="meta">هاد الدرس ما بدّه فيديو، الرسمات بتكفّي.</span>`}</div>
-    <label class="done"><input type="checkbox" data-l="${l.id}" ${done[l.id]?"checked":""}> خلّصت الدرس</label></div></article>
+    <label class="done"><input type="checkbox" data-l="${l.id}" ${done[l.id]?"checked":""}> خلّصت الدرس</label></div>
+    <div class="rate"><span class="meta">الدرس كان:</span>${[["easy","سهل"],["ok","مناسب"],["hard","صعب"]].map(([k,t])=>`<button class="chip${(LS("cm40-rev",{})[l.id]||{}).rate===k?" on":""}" data-r="${k}">${t}</button>`).join("")}<span class="meta rmsg"></span></div></article>
   <nav class="lnav">${prev?`<a href="#/l/${prev.id}"><small>الدرس اللي قبل</small>${prev.no}. ${prev.t}</a>`:"<span></span>"}${next?`<a class="nx" href="#/l/${next.id}"><small>الدرس الجاي</small>${next.no}. ${next.t}</a>`:`<a class="nx" href="#/"><small>خلّصت الدورة!</small>رجوع للرئيسية</a>`}</nav>`;
   const figs=lessonBody(l,view.querySelector(".lbody"));
   l.figs.forEach(f=>{try{mountFig(figs,f)}catch(err){console.error(l.id,err)}});
@@ -70,7 +71,10 @@ function route(){
   document.querySelectorAll("#topnav a,#botnav a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")===nav));
   window.scrollTo(0,0);
 }
-view.addEventListener("change",e=>{const l=e.target.dataset.l;if(l){done[l]=e.target.checked;save()}});
+view.addEventListener("change",e=>{const l=e.target.dataset.l;if(l){done[l]=e.target.checked;save();if(done[l])markLearned(l)}});
+view.addEventListener("cm40-pass",e=>{const art=e.target.closest(".lesson");if(!art||!ALL.find(x=>x.id===art.id))return;done[art.id]=true;save();markLearned(art.id);const cb=art.querySelector("input[data-l]");if(cb)cb.checked=true});
+view.addEventListener("click",e=>{const b=e.target.closest(".rate .chip");if(!b)return;const art=b.closest(".lesson");rateLesson(art.id,b.dataset.r);art.querySelectorAll(".rate .chip").forEach(x=>x.classList.toggle("on",x===b));
+  art.querySelector(".rmsg").textContent={easy:"تمام، رح نراجعه أقل.",ok:"تمام، رح يرجعلك مراجعة بعد كم يوم.",hard:"رح يرجعلك بتمرين اليوم. ابدأ بتمرين «١ سهل» على ٦٠%."}[b.dataset.r]});
 addEventListener("hashchange",route);
 route();
 

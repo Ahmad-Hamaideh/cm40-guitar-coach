@@ -65,6 +65,7 @@ const songLesson=s=>ALL.find(x=>x.id===s.lesson);
 const songChords=s=>s.bars?[...new Set(s.bars.flat())]:lessonChords(songLesson(s));
 const easyF=bars=>bars.map(b=>b.map(c=>c==="F"?"Fmaj7":c));
 const songCoach=s=>{
+  if(s.piece)return pieceCfg(s);
   if(!s.bars){const f=songLesson(s).figs.find(f=>f.w==="coach");return f&&f.cfg}
   const hasF=s.bars.flat().includes("F"),capo=s.capo?` مع الأغنية الأصلية حط كابو على فريت ${s.capo}.`:"";
   const tr=[{n:"بسيط (٤ لتحت)",bpm:72,ev:patEv(s.bars,P4,s.secs||{}),d:`الأغنية كاملة، ٤ ضربات بكل مازورة.${capo}`},
@@ -88,11 +89,21 @@ function renderSong(view,id){
   mountFig(view.querySelector(".figs"),{w:"coach",cfg:songCoach(s)});
 }
 
+// ---------- spaced review: a finished lesson comes back after 1, 3, 7, 14, 30 days ----------
+const REVI=[1,3,7,14,30];
+function markLearned(id){const r=LS("cm40-rev",{});if(!r[id])r[id]={d:dayKey(new Date()),n:0};LSset("cm40-rev",r)}
+function rateLesson(id,rate){const r=LS("cm40-rev",{}),x=r[id]||{d:dayKey(new Date()),n:0};x.rate=rate;
+  if(rate==="hard"){x.n=0;x.d=dayKey(new Date(Date.now()-864e5))}if(rate==="easy")x.n=Math.max(x.n,1);r[id]=x;LSset("cm40-rev",r)}
+function dueReviews(){const r=LS("cm40-rev",{}),t=dayKey(new Date());
+  return Object.entries(r).filter(([id,x])=>{if(!done[id])return false;const d=new Date(x.d);d.setDate(d.getDate()+REVI[Math.min(x.n,4)]);return dayKey(d)<=t}).sort((a,b)=>a[1].d<b[1].d?-1:1).map(([id])=>id)}
+function reviewed(id){const r=LS("cm40-rev",{});if(r[id]){r[id].n++;r[id].d=dayKey(new Date());LSset("cm40-rev",r)}}
+
 // ---------- today's practice ----------
 function sessionPlan(){
   const next=ALL.find(l=>!done[l.id])||ALL[ALL.length-1],reached=ALL.slice(0,next.no);
   const coachOf=id=>ALL.find(x=>x.id===id).figs.find(f=>f.w==="coach");
   const steps=[{t:"تسخين: الكروماتيك",min:5,fig:coachOf("n10"),why:"الأصابع الأربعة والإيدين مع بعض."}];
+  dueReviews().slice(0,2).forEach(id=>{const l=ALL.find(x=>x.id===id);steps.push({t:`مراجعة: ${l.no}. ${l.t}`,min:5,fig:l.figs.find(f=>f.w==="coach")||l.figs.find(f=>typeof f!=="string")||l.figs[0],why:"المراجعة بوقتها بتثبّت الدرس بالذاكرة الطويلة.",link:l.id,rev:id})});
   steps.push({t:`الدرس الحالي: ${next.no}. ${next.t}`,min:10,fig:next.figs.find(f=>f.w==="coach")||next.figs.find(f=>typeof f!=="string")||next.figs[0],why:next.goal,link:next.id});
   const pairs=[];reached.forEach(l=>l.figs.forEach(f=>{if(f.w==="sw")pairs.push(...f.cfg.pairs)}));
   if(pairs.length){const best=LS("cm40-best",{});pairs.sort((a,b)=>(best[a.join("-")]||0)-(best[b.join("-")]||0));steps.push({t:"تبديل كوردات",min:5,fig:{w:"sw",cfg:{pairs:pairs.slice(0,3)}},why:"الأزواج اللي رقمها الأبطأ عندك."})}
@@ -115,7 +126,7 @@ function renderToday(view){
     figs.innerHTML="";mountFig(figs,s.fig);
   };
   tgo.onclick=()=>{if(iv){stopT();return}tgo.textContent="وقّف المؤقّت";iv=setInterval(()=>{left--;spent++;tm.textContent=fmt(left);if(left<=0){stopT();click(ac().currentTime,true);tm.textContent="خلص الوقت!"}},1000)};
-  view.querySelector(".tnx").onclick=()=>{stopT();logPractice(spent);spent=0;i++;
+  view.querySelector(".tnx").onclick=()=>{stopT();logPractice(spent);spent=0;if(steps[i].rev)reviewed(steps[i].rev);i++;
     if(i<steps.length)return load();
     stopAll();view.querySelector(".tnow").innerHTML=`<div class="qdone"><b>كفو!</b><p>خلّصت تمرين اليوم. صرلك ${streak()||1} يوم ورا بعض.</p><a class="btn" href="#/progress">شوف تقدّمك</a></div>`;
     view.querySelectorAll(".tsteps li").forEach(li=>li.classList.add("ok"))};
@@ -165,3 +176,24 @@ function renderEar(view){
   view.querySelector(".eg").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;g=b.dataset.g;run=0;score=0;tries=0;view.querySelectorAll(".eg .chip").forEach(x=>x.classList.toggle("on",x===b));nextQ()};
   nextQ();
 }
+
+// ---------- full public-domain pieces (converted from ClassTab.org tabs by script) ----------
+const pieceEv=k=>{let bar=0;return PIECES[k].ev.map(([d,n,sl,b])=>{if(b)bar++;return {d,n,sl:sl||undefined,lab:b&&bar%4===1?`م${bar}`:null}})};
+const PIECE_INFO=[
+  {id:"romanza-full",k:"romanza",t:"Romanza كاملة",by:"مجهول",lvl:3,kind:"كلاسيك · a m i",lesson:"n22",bpm:56,src:["التاب الأصلي على ClassTab","https://www.classtab.org/anon_romance_de_amor.txt"]},
+  {id:"andantino",k:"andantino",t:"Andantino، Op.35 No.2",by:"Fernando Sor",lvl:2,kind:"دراسة كلاسيك",lesson:"n27",bpm:70,src:["التاب الأصلي على ClassTab","https://www.classtab.org/sor_op35_no02_andantino_in_c.txt"]},
+  {id:"sor22",k:"sor22",t:"دراسة بـ Bm، Op.35 No.22",by:"Fernando Sor",lvl:4,kind:"أربيج · بار",lesson:"n30",bpm:60,src:["التاب الأصلي على ClassTab","https://www.classtab.org/sor_op35_no22_allegretto_in_bm.txt"]},
+  {id:"lagrima",k:"lagrima",t:"Lágrima",by:"Francisco Tárrega",lvl:4,kind:"كلاسيك",lesson:"n39",bpm:60,src:["التاب الأصلي على ClassTab","https://www.classtab.org/tarrega_lagrima.txt"]},
+];
+PIECE_INFO.forEach(p=>SONGS.push({...p,piece:1}));
+const pieceCfg=p=>({tracks:[{n:"كاملة",bpm:p.bpm,bar:3,phrase:3,ev:pieceEv(p.k),d:"النغمات والإيقاع من التاب الأصلي (ClassTab.org). أصابع الإيد الشمال مقترحة. استعمل «التمرين» تحت لتبدأ بجزء صغير وبطيء."}]});
+// the Romanza lesson gets the full piece; the repertoire lesson gets Lágrima
+UNITS.flatMap(u=>u.lessons).forEach(l=>{
+  if(l.id==="n22"){const c=l.figs.find(f=>f.w==="coach");c.cfg.tracks.push({...pieceCfg(PIECE_INFO[0]).tracks[0],n:"المقطوعة كاملة"})}
+  if(l.id==="n39")l.figs.push({w:"coach",cfg:pieceCfg(PIECE_INFO[3])});
+  if(l.id==="n27")l.figs.push({w:"coach",cfg:pieceCfg(PIECE_INFO[1])});
+});
+
+// Arabic video series per unit (whole series, not an exact match for each lesson)
+const AR_SERIES={A:["سلسلة عربية للمبتدئين (كاملة)","https://www.youtube.com/playlist?list=PLldfRVxgJg3vYVbA2mwbiL9ZQT3YVfUMz"],B:["سلسلة عربية للمبتدئين (كاملة)","https://www.youtube.com/playlist?list=PLldfRVxgJg3vYVbA2mwbiL9ZQT3YVfUMz"],C:["كورس جيتار من الصفر (عربي)","https://www.youtube.com/playlist?list=PLc76eLZH8vnVexTkoAiLkkmUEw90iWUdy"],D:["قناة Arabic Guitar Click (كلاسيك بالعربي)","https://www.youtube.com/c/ArabicGuitarClick"],E:["قناة Arabic Guitar Click (كلاسيك بالعربي)","https://www.youtube.com/c/ArabicGuitarClick"],F:["Ahmed Ibrahim Guitar Academy (عربي)","https://www.youtube.com/@ahmedibrahimguitaracademy2843"],G:["Ahmed Ibrahim Guitar Academy (عربي)","https://www.youtube.com/@ahmedibrahimguitaracademy2843"]};
+UNITS.forEach(u=>u.lessons.forEach(l=>{if(AR_SERIES[u.id]&&!l.vids.some(v=>v[1]===AR_SERIES[u.id][1]))l.vids.push(AR_SERIES[u.id])}));
