@@ -145,6 +145,8 @@ function sessionPlan(){
   dueReviews().slice(0,2).forEach(id=>{const l=ALL.find(x=>x.id===id);steps.push({t:`مراجعة: ${l.no}. ${l.t}`,min:5,fig:figOf(l),why:"المراجعة بوقتها بتثبّت الدرس بالذاكرة الطويلة.",link:l.id,rev:id,drop:3})});
   if(!(st[next.id]||{}).seen)steps.push({t:`افهم: ${next.no}. ${next.t}`,min:Math.max(3,Math.min(Math.round(next.m/2),Math.round(prof.min*.3))),fig:next.figs.find(f=>typeof f==="string")||next.figs[0],why:"افتح الدرس واقرأ «افهم» خطوة خطوة قبل ما تعزف.",link:next.id,keep:1});
   steps.push({t:`${hasCoach(next)?"تمرّن":"طبّق"}: ${next.no}. ${next.t}`,min:10,fig:figOf(next),why:next.goal,link:next.id,keep:1,main:1});
+  const tip=coachTips()[0];
+  if(tip)steps.push({t:`غلطتك: ${tip.t}`,min:5,fig:tip.fig,why:tip.why,drop:2.5});
   const pairs=[];learned.forEach(l=>l.figs.forEach(f=>{if(f.w==="sw")pairs.push(...f.cfg.pairs)}));
   if(pairs.length){const best=LS("cm40-best",{});pairs.sort((a,b)=>(best[a.join("-")]||0)-(best[b.join("-")]||0));steps.push({t:"تبديل كوردات",min:5,fig:{w:"sw",cfg:{pairs:pairs.slice(0,3)}},why:"الأزواج اللي رقمها الأبطأ عندك.",drop:1})}
   const ready=SONGS.filter(s=>done[s.lesson]);
@@ -206,12 +208,20 @@ function renderProgress(view){
   <div class="pgrid"><section class="pcard"><h3>أيام التمرين</h3><p class="meta">آخر ${W7} أسبوع. كل مربّع يوم، وكل ما كان أغمق ذهبي يعني تمرّنت أكتر.</p>${heat}</section>
   <section class="pcard"><h3>تبديل الكوردات (بالدقيقة)</h3><p class="meta">الخط الذهبي = ٦٠، الهدف.</p>${chart}</section>
   <section class="pcard"><h3>الوحدات</h3>${UNITS.map(u=>{const d=u.lessons.filter(l=>done[l.id]).length;return `<div class="urow"><span>${u.id} · ${u.name}</span><div class="bar"><i style="width:${d/u.lessons.length*100}%"></i></div><span class="mono">${d}/${u.lessons.length}</span></div>`}).join("")}</section>
+  <section class="pcard"><h3>مدرّبك بيحكي</h3>${(()=>{const t=coachTips();return t.length?t.map((x,i)=>`<details class="tip" data-i="${i}"><summary><b>${x.t}</b></summary><p class="meta">${x.why}</p><div class="tipfig"></div></details>`).join(""):`<p class="meta">لما تعمل كم «امتحان بالإيقاع»، بطلّعلك هون شو الغلطة اللي بتتكرّر عندك وتمرين إلها.</p>`})()}</section>
+  <section class="pcard"><h3>هدف الأسبوع</h3>${weekBar()}<div class="ctrl"><label class="meta">دقايق <input type="number" class="gmin" min="10" max="2000" step="10" value="${GOAL().min}"></label><label class="meta">أيام <input type="number" class="gdays" min="1" max="7" value="${GOAL().days}"></label><button class="btn ghost gsave">احفظ</button></div>
+    <h4>تذكير يومي</h4><p class="meta">بنزّلك ملف تقويم، افتحه وبيضيف تذكير كل يوم على جوالك أو كمبيوترك.</p><div class="ctrl"><input type="time" class="rtime" value="20:00" aria-label="وقت التذكير"><button class="btn ghost rics">ضيف التذكير للتقويم</button></div></section>
+  <section class="pcard"><h3>تسجيلاتي</h3><div class="takes"><p class="meta">بحمّل…</p></div><p class="meta">التسجيلات على هاد الجهاز بس، ومش جوّا النسخة اللي بتنزّلها.</p></section>
   <section class="pcard"><h3>ملاحظاتك على الدروس</h3>${(()=>{const fb=Object.entries(LS("cm40-fb",{})).filter(([,x])=>!x.ok);return fb.length?fb.map(([id,x])=>{const l=ALL.find(y=>y.id===id);return l?`<div class="urow"><a href="#/l/${id}">${l.no}. ${l.t}</a><span class="meta">${x.why||"مش واضح"}</span></div>`:""}).join(""):`<p class="meta">ما في دروس معلّمها «مش واضح».</p>`})()}</section>
   <section class="pcard"><h3>آخر الامتحانات</h3>${(()=>{const ex=Object.entries(LS("cm40-exam",{})).map(([k,a])=>[k,a[a.length-1]]).sort((p,q)=>p[1].d<q[1].d?1:-1).slice(0,8);return ex.length?ex.map(([k,x])=>{const id=k.split("|")[0],l=ALL.find(y=>y.id===id);return `<div class="urow"><span>${l?`${l.no}. ${l.t}`:decodeURIComponent(id.replace("#/",""))}</span><span class="mono">${x.sc}%</span><span class="meta">${x.k==="r"?"إيقاع":"نغمات"} · ${x.d}</span></div>`}).join(""):`<p class="meta">لسا ما عملت امتحان بالمايك.</p>`})()}</section>
   <section class="pcard"><h3>احفظ تقدّمك</h3><p class="meta">التقدّم محفوظ بهاد المتصفح بس. نزّل نسخة، وارجعها على أي جهاز أو بعد ما تمسح المتصفح.</p><div class="ctrl"><button class="btn ghost pexp">نزّل نسخة</button><label class="btn ghost">ارجع نسخة<input type="file" accept=".json,application/json" class="pimp" hidden></label></div><p class="meta pmsg"></p></section>
   <section class="pcard"><h3>الدورة بدون نت</h3><p class="meta poffm">بفحص…</p><button class="btn ghost poff">نزّل كل الدورة</button></section>
   <section class="pcard"><h3>تدريب الأذن</h3>${Object.keys(EAR).map(k=>`<div class="urow"><span>${EAR[k].n}</span><span class="mono">${ear[k]||0}</span><span class="meta">أحسن سلسلة صح</span></div>`).join("")}</section></div>`;
-  wireBackup(view);
+  wireBackup(view);wireWeek(view);
+  const tips=coachTips();view.querySelectorAll("details.tip").forEach(d=>d.ontoggle=()=>{const f=d.querySelector(".tipfig");if(d.open&&!f.childElementCount)mountFig(f,tips[+d.dataset.i].fig)});
+  TAKES.all().then(list=>{const el=view.querySelector(".takes");if(!el)return;
+    el.innerHTML=list.length?list.sort((a,b)=>a[1].d<b[1].d?1:-1).map(([k,x])=>`<div class="tk"><span>${x.t||k}${x.sc!=null?` · ${x.sc}%`:""} · ${x.d}</span><audio controls preload="none" src="${URL.createObjectURL(x.blob)}"></audio><button class="chip tdel" data-k="${encodeURIComponent(k)}">امسح</button></div>`).join(""):`<p class="meta">لسا ما حفظت تسجيل. من «خيارات أكتر» ← «سجّلني» بأي تمرين.</p>`;
+    el.onclick=async e=>{const b=e.target.closest(".tdel");if(!b||!confirm("أمسح هالتسجيل؟"))return;await TAKES.del(decodeURIComponent(b.dataset.k));b.closest(".tk").remove()}}).catch(()=>{const el=view.querySelector(".takes");if(el)el.innerHTML=`<p class="meta">هاد المتصفح ما بيسمح بحفظ التسجيلات.</p>`});
 }
 
 // ---------- backup and offline ----------
@@ -230,7 +240,7 @@ function wireBackup(view){
   const om=view.querySelector(".poffm"),ob=view.querySelector(".poff");
   if(!("caches" in window)||!navigator.serviceWorker||!navigator.serviceWorker.controller){om.textContent="بيشتغل من الرابط الرسمي بس (https)، بعد ما تفتح الموقع مرة.";ob.hidden=true;return}
   const urls=["./","index.html","manifest.webmanifest","icon.svg",...[...document.scripts].map(x=>x.getAttribute("src")).filter(Boolean),...Array.from({length:47},(_,i)=>`samples/${40+i}.mp3`)];
-  const cache=async()=>caches.open((await caches.keys()).find(k=>k.startsWith("cm40-"))||"cm40-v11");
+  const cache=async()=>caches.open((await caches.keys()).find(k=>k.startsWith("cm40-"))||"cm40-v12");
   const count=async c=>(await Promise.all(urls.map(u=>c.match(u)))).filter(Boolean).length;
   const status=async()=>{const n=await count(await cache());om.textContent=n===urls.length?`✓ الدورة كاملة محمّلة (${n}/${urls.length} ملف). بتشتغل بدون نت.`:`محمّل ${n} من ${urls.length} ملف. نزّل الباقي عشان تشتغل بدون نت.`;ob.hidden=n===urls.length};
   ob.onclick=async()=>{ob.disabled=true;const c=await cache();let k=0,bad=0;
@@ -316,4 +326,62 @@ function renderTest(view){
     stopAll();res.push({d:dayKey(new Date()),tasks:cur});LSset("cm40-test",res);renderTest(view)};
   view.querySelector(".texp").onclick=()=>exportProgress("test");
   load();
+}
+
+// ---------- recordings: the best take per track, kept in IndexedDB on this device ----------
+const TAKES={
+  open(){return this.db||(this.db=new Promise((res,rej)=>{const r=indexedDB.open("cm40",1);r.onupgradeneeded=()=>r.result.createObjectStore("takes");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
+  async run(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("takes",mode);fn(t.objectStore("takes"));t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})},
+  put(k,v){return this.run("readwrite",st=>st.put(v,k))},
+  del(k){return this.run("readwrite",st=>st.delete(k))},
+  async all(){const out=[];await this.run("readonly",st=>{const c=st.openCursor();c.onsuccess=()=>{const x=c.result;if(x){out.push([x.key,x.value]);x.continue()}}});return out}
+};
+
+// ---------- mistake coach: patterns across the last exams, each with a drill ----------
+function coachTips(){
+  const recs=Object.values(LS("cm40-exam",{})).flat().sort((a,b)=>a.d<b.d?-1:1).slice(-15),tips=[];
+  const dts=recs.filter(r=>r.k==="r").flatMap(r=>r.dt||[]).filter(x=>x!=null);
+  if(dts.length>=12){
+    const m=dts.reduce((a,b)=>a+b,0)/dts.length,sd=Math.sqrt(dts.reduce((a,b)=>a+(b-m)**2,0)/dts.length);
+    const beat={w:"coach",cfg:{tracks:[{n:"مع الطقة",bpm:60,ev:melEv(Array.from({length:16},(_,k)=>[3,0,0,k%2?"m":"i"])),d:"نغمة وحدة على كل طقة. من «خيارات أكتر» اعمل «امتحان بالإيقاع» وشوف إذا تحسّن."}]}};
+    if(m>60)tips.push({t:"بتضرب متأخر",why:`بمعدّل ${Math.round(m)} ملي ثانية بعد الطقة. اضرب «مع» الصوت، مش بعد ما تسمعه: جهّز الإصبع على الوتر قبل الطقة.`,fig:beat});
+    else if(m<-60)tips.push({t:"بتستعجل",why:`بمعدّل ${Math.round(-m)} ملي ثانية قبل الطقة. استنّى الطقة، وعدّ بصوت عالي.`,fig:beat});
+    else if(sd>110)tips.push({t:"الوقت مش ثابت",why:"مرة بدري ومرة متأخر. نزّل السرعة ١٠، وعدّ «واحد تنين تلاتة أربعة» بصوت عالي.",fig:beat});
+  }
+  const top=key=>{const c={};recs.forEach(r=>(r[key]||[]).forEach(x=>c[x]=(c[x]||0)+1));return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]||[]};
+  const [ws,wc]=top("ms");
+  if(wc>=4){const st=+ws;tips.push({t:`الوتر ${st} (${SNAME[st-1]}) مش واضح`,why:`غلطت عليه ${wc} مرات بآخر امتحاناتك. تأكّد إن ولا إصبع من الإيد الشمال لامسه، وإن الإيد اليمين بتضربه من نصّه.`,
+    fig:{w:"coach",cfg:{tracks:[{n:`الوتر ${st}`,bpm:60,ev:melEv([0,1,2,3,2,1,0,1,2,3,2,1,0].map((f,k)=>[st,f,f,k%2?"m":"i"])),d:"الوتر لحاله: مفتوح وفريت 1 و2 و3 رايح جاي. كل نغمة لازم ترنّ نظيفة."}]}}})}
+  const [wp,wn]=top("mc");
+  if(wn>=2){const [a,b]=wp.split(">");if(CH[a]&&CH[b])tips.push({t:`التبديل ${a} ← ${b} بطيء`,why:`هون وقعت ${wn} مرات. تمرين الدقيقة على هالزوج بالزبط.`,fig:{w:"sw",cfg:{pairs:[[a,b]]}}})}
+  return tips;
+}
+
+// ---------- the week: goal, challenge, reminder (weeks start on Saturday) ----------
+const weekStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+1)%7));return x};
+function weekStats(off=0){const st=weekStart(new Date());st.setDate(st.getDate()+7*off);const log=LS("cm40-log",{});let min=0,days=0;
+  for(let i=0;i<7;i++){const d=new Date(st);d.setDate(st.getDate()+i);const m=log[dayKey(d)]||0;min+=m;if(m>=1)days++}return {min:Math.round(min),days,start:st}}
+const GOAL=()=>LS("cm40-goal",{min:120,days:4});
+const weekBar=()=>{const g=GOAL(),w=weekStats();return `<div class="wk"><span>هالأسبوع: <b class="mono">${w.min}/${g.min}</b> دقيقة · <b class="mono">${w.days}/${g.days}</b> أيام${w.min>=g.min&&w.days>=g.days?" ✓":""}</span><div class="bar"><i style="width:${Math.min(100,w.min/g.min*100)}%"></i></div></div>`};
+function wireWeek(view){
+  view.querySelector(".gsave").onclick=()=>{const min=Math.max(10,+view.querySelector(".gmin").value||120),days=Math.min(7,Math.max(1,+view.querySelector(".gdays").value||4));LSset("cm40-goal",{min,days});renderProgress(view)};
+  view.querySelector(".rics").onclick=()=>{const [h,m]=(view.querySelector(".rtime").value||"20:00").split(":"),d=new Date(),p=n=>String(n).padStart(2,"0");
+    const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CM40 coach//AR","BEGIN:VEVENT",`UID:cm40-${Date.now()}@cm40-coach`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
+      `DTSTART:${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(+h)}${p(+m)}00`,"DURATION:PT20M","RRULE:FREQ=DAILY","SUMMARY:تمرين الجيتار",`DESCRIPTION:${location.origin+location.pathname}#/today`,
+      "BEGIN:VALARM","TRIGGER:PT0M","ACTION:DISPLAY","DESCRIPTION:وقت تمرين الجيتار","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download="cm40-reminder.ics";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+}
+// A new passage every week: the hardest 12 steps of a lesson you mastered (or an early lesson if none yet).
+function challenge(){
+  const pool=ALL.filter(l=>done[l.id]&&hasCoach(l)),src=pool.length?pool:ALL.filter(hasCoach).slice(0,3);
+  const l=src[Math.floor(weekStart(new Date()).getTime()/(7*864e5))%src.length],tr=l.figs.find(f=>f.w==="coach").cfg.tracks[0],h=hardSec(tr.ev,12);
+  return {l,track:{n:"التحدّي",bpm:tr.bpm,bar:tr.bar,ev:h?tr.ev.slice(h[0],h[1]+1):tr.ev,d:`مقطع من «${l.t}». من «خيارات أكتر» اعمل «امتحان بالإيقاع»، وأحسن نتيجة هالأسبوع بتنحفظ.`}};
+}
+function renderChallenge(view){
+  const {l,track}=challenge();
+  const best=off=>{const a=dayKey(weekStats(off).start),b=dayKey(weekStats(off+1).start),r=(LS("cm40-exam",{})["#/challenge|0"]||[]).filter(x=>x.k==="r"&&x.d>=a&&x.d<b);return r.length?Math.max(...r.map(x=>x.sc)):null};
+  view.innerHTML=`${crumb("<span>تحدّي الأسبوع</span>")}<div class="uh"><span class="tag">تحدّي الأسبوع</span><h2>${l.t}: أصعب مقطع</h2><p>كل أسبوع مقطع جديد من دروس أتقنتها. اعمل «امتحان بالإيقاع» كم مرة، وبنقارن أحسن نتيجة إلك بنتيجتك بتحدّي الأسبوع اللي قبل.</p></div>
+  <div class="tiles cst"></div><div class="figs"></div>`;
+  const st=()=>{const a=best(0),b=best(-1);view.querySelector(".cst").innerHTML=[[a==null?"–":a+"%","أحسن نتيجة هالأسبوع"],[b==null?"–":b+"%","الأسبوع اللي قبل"],[a==null||b==null?"–":(a>=b?"+":"")+(a-b),"الفرق"]].map(([v,t])=>`<div class="tile"><b class="mono">${v}</b><span>${t}</span></div>`).join("")};
+  st();const f=mountFig(view.querySelector(".figs"),{w:"coach",cfg:{tracks:[track]}});f.addEventListener("cm40-exam",st);
 }

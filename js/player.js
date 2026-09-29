@@ -15,8 +15,8 @@ W.coach=(el,cfg)=>{
   <div class="ctrl lvls"><span class="meta">التمرين:</span><button class="chip lv" data-l="0">١ سهل</button><button class="chip lv" data-l="1">٢ متوسط</button><button class="chip lv" data-l="2">٣ الهدف</button><button class="chip wait">المايك: بستنّاك</button><button class="chip hard" hidden>أصعب مقطع</button></div>
   <details class="more"><summary class="meta">خيارات أكتر: عدّ، تكرار، مقطع، امتحانات المايك</summary>
   <div class="ctrl"><label class="meta"><input type="checkbox" class="cin" checked> عدّ قبل ما يبلّش</label><label class="meta"><input type="checkbox" class="lp" checked> كرّر</label><label class="meta"><input type="checkbox" class="turn"> هو بيعزف وبعدين أنا</label><button class="chip ab">حدّد مقطع (A–B)</button></div>
-  <div class="ctrl"><button class="chip exam">فحص النغمات</button><button class="chip rexam">امتحان بالإيقاع</button><span class="meta">فحص النغمات: كل نغمة صح؟ · الإيقاع: صح وبوقتها مع المترونوم. <a href="#/mic">المايك مش مزبوط؟ اضبطه</a></span></div></details>
-  <p class="wmsg"></p><p class="meta hist"></p>`;
+  <div class="ctrl"><button class="chip exam">فحص النغمات</button><button class="chip rexam">امتحان بالإيقاع</button><button class="chip recb">سجّلني</button><span class="meta">فحص النغمات: كل نغمة صح؟ · الإيقاع: صح وبوقتها مع المترونوم. <a href="#/mic">المايك مش مزبوط؟ اضبطه</a></span></div></details>
+  <p class="wmsg"></p><p class="meta hist"></p><div class="take"></div>`;
   const $=q=>el.querySelector(q);
   const btn=$(".play"),rng=$(".rng"),v=$(".v"),lp=$(".lp"),turn=$(".turn"),cin=$(".cin"),laneEl=$(".lane"),turnEl=$(".cturn"),abB=$(".ab"),waitB=$(".wait"),wmsg=$(".wmsg");
   const gv=new GuitarView($(".gvh"));
@@ -36,7 +36,7 @@ W.coach=(el,cfg)=>{
   };
   const soundAt=(e,rel)=>{
     if(e.c&&e.k)strum(CH[e.c],e.k,e.v||.28,rel);
-    (e.n||[]).forEach(([s,f])=>{let m=OPEN_MIDI[s-1]+(e.h?0:f);if(e.h)m+=({12:12,7:19,5:24})[f]||0;playMidi(m,rel,e.sl?.32:.5,e.h?{cut:4000,dur:3.5}:{})});
+    (e.n||[]).forEach(([s,f])=>{let m=OPEN_MIDI[s-1]+(e.h?0:f);if(e.h)m+=({12:12,7:19,5:24})[f]||0;playMidi(m,rel,e.v||(e.sl?.32:.5),e.h?{cut:4000,dur:3.5}:{})});
   };
 
   let tStart=0;
@@ -99,7 +99,7 @@ W.coach=(el,cfg)=>{
 
   // Exam history per track: last scores, and a red mark above the tab where recent attempts went wrong.
   const hKey=()=>(lessonId()||location.hash)+"|"+ti;
-  const saveExam=rec=>{const h=LS("cm40-exam",{}),k=hKey();h[k]=[...(h[k]||[]),{d:dayKey(new Date()),...rec}].slice(-10);LSset("cm40-exam",h);drawHist()};
+  const saveExam=rec=>{const h=LS("cm40-exam",{}),k=hKey();h[k]=[...(h[k]||[]),{d:dayKey(new Date()),...rec}].slice(-10);LSset("cm40-exam",h);drawHist();el.dispatchEvent(new CustomEvent("cm40-exam",{bubbles:true}))};
   const drawHist=()=>{const a=LS("cm40-exam",{})[hKey()]||[],cnt={};
     $(".hist").textContent=a.length?`محاولاتك: ${a.slice(-5).map(x=>`${x.sc}% ${x.k==="r"?"إيقاع":"نغمات"}`).join(" · ")}. الأحمر فوق التاب = وين غلطت بآخر محاولات.`:"";
     laneEl.querySelectorAll(".miss").forEach(x=>x.remove());a.slice(-5).forEach(x=>(x.miss||[]).forEach(k=>cnt[k]=(cnt[k]||0)+1));
@@ -118,7 +118,7 @@ W.coach=(el,cfg)=>{
     hold=ok?hold+1:0;
     if(hold>=3){gv.hit(EV[steps[wi]]);hold=-1;wmsg.className="wmsg good";wmsg.textContent="✓ صح!";if(exam){hits++;setTimeout(nextExam,350);return}setTimeout(()=>{if(!waitOn)return;wi=(wi+1)%steps.length;showStep()},450)}
   };
-  const endWait=()=>{Mic.stop();waitOn=false;exam=false;if(rex){rex=null;stop()}waitB.classList.remove("on");waitB.textContent="المايك: بستنّاك";wmsg.className="wmsg";wmsg.textContent=""};
+  const endWait=()=>{if(rec&&rec.state!=="inactive")rec.stop();rec=null;Mic.stop();waitOn=false;exam=false;if(rex){rex=null;stop()}waitB.classList.remove("on");waitB.textContent="المايك: بستنّاك";wmsg.className="wmsg";wmsg.textContent=""};
   waitB.onclick=async()=>{
     if(waitOn){endWait();return}
     stopAll();
@@ -138,7 +138,7 @@ W.coach=(el,cfg)=>{
   const nextExam=()=>{if(!waitOn)return;wi++;if(wi<steps.length)return showStep();
     const n=steps.length,sc=Math.round(hits/n*100),pass=sc>=90,chords=steps.some(k=>EV[k].c);endWait();
     if(sil>n*.3){wmsg.innerHTML=cantHear(sil,n);return}
-    saveExam({k:"n",sc,miss:missK});
+    saveExam({k:"n",sc,miss:missK,ms:missK.map(k=>expect(k).s).filter(Boolean)});
     wmsg.className=pass?"wmsg good":"wmsg";
     wmsg.textContent=(pass?`نغماتك صح: ${sc}%.${full?"":" (هاد المقطع بس)"} الخطوة الجاية: «امتحان بالإيقاع».`:`${sc}% صح. بدك ٩٠%. ارجع لتمرين «٢ متوسط» وجرّب مرة ثانية.`)+(chords?" فحص الكوردات بالمايك تقريبي: اعزف كل كورد وتر وتر وتأكّد إن كل الأوتار بترن.":"");
     if(pass&&full)passEv("notes")};
@@ -149,24 +149,33 @@ W.coach=(el,cfg)=>{
     wmsg.textContent=`فحص النغمات: ${steps.length} ${full?"":"(المقطع المحدّد) "}نغمة أو كورد. عندك ٤ ثواني لكل وحدة.`;
     setTimeout(()=>{if(waitOn){showStep();Mic.listen(onMic)}},1500)};
 
-  // Rhythm exam: the metronome clicks, you play. A step counts only if the right pitch sounds
-  // and a fresh attack (a jump in loudness) lands close to its beat.
-  el.querySelector(".rexam").onclick=async()=>{
+  // Rhythm exam and «سجّلني»: the metronome clicks, you play, and the take is recorded. In the exam a step
+  // counts only if the right pitch sounds and the nearest attack (a jump in loudness) lands close to its beat.
+  const runTake=async judge=>{
     if(!await startMic())return;
     const tok=rex={};await calibrate();if(rex!==tok)return;
     const c=ac(),sp=spb(),lo=A??0,hi=B??N-1,bb=tracks[ti].bar||4,part=A!=null,base=tracks[ti].bpm||60;
     let t=c.currentTime+.3;const T=[];
+    rec=startRec();const recStart=c.currentTime;
     for(let b=0;b<bb;b++){click(t,b===0);vq.push({t,count:bb-b});t+=sp}
     const t0=t;for(let k=lo;k<=hi;k++){T[k]=t;vq.push({t,i:k});t+=EV[k].d*sp}
-    const end=t,want=buildSteps().filter(k=>k>=lo&&k<=hi),tol=Math.max(.1,Math.min(.2,sp/4));
-    const R=want.map((k,j)=>({k,a:T[k]-tol,b:Math.max(T[k]+.3,j+1<want.length?T[want[j+1]]:end),x:expect(k),pitch:0,on:0,heard:0}));
+    const end=t,want=buildSteps().filter(k=>k>=lo&&k<=hi),tol=Math.max(.1,Math.min(.2,sp/4)),reachW=Math.max(.35,sp*.5);
+    const R=want.map((k,j)=>({k,a:T[k]-tol,b:Math.max(T[k]+.3,j+1<want.length?T[want[j+1]]:end),x:expect(k),pitch:0,dt:null,heard:0}));
     let prev=1,clickT=t0,beat=0;const lat=LAT();
+    if(rec)rec.meta={lo,hi,T,t0,off:t0-recStart,lat,ev:EV,bpm:+rng.value};
     playing=true;tStart=c.currentTime;btn.textContent="■ وقّف";requestAnimationFrame(raf);
-    wmsg.textContent=`اعزف مع المترونوم: ${want.length} خطوة على سرعة ${rng.value}.`;
-    const finish=()=>{const reach=+rng.value>=base;endWait();
+    wmsg.textContent=judge?`اعزف مع المترونوم: ${want.length} خطوة على سرعة ${rng.value}.`:"عم سجّل… اعزف مع المترونوم.";
+    const finish=()=>{const reach=+rng.value>=base;
+      R.forEach(s=>s.on=s.dt!=null&&Math.abs(s.dt)<=tol);
       const n=R.length,s0=R.filter(s=>!s.heard).length,ok=R.filter(s=>s.pitch&&s.on).length,pn=R.filter(s=>s.pitch).length,sc=Math.round(ok/n*100),pass=sc>=80,miss=R.find(s=>!(s.pitch&&s.on));
+      if(rec)rec.meta.sc=judge?sc:null;
+      endWait();
+      if(!judge){wmsg.textContent="خلص التسجيل. اسمعه تحت.";return}
       if(s0>n*.3){wmsg.innerHTML=cantHear(s0,n);return}
-      saveExam({k:"r",sc,bpm:+rng.value,miss:R.filter(s=>!(s.pitch&&s.on)).map(s=>s.k)});
+      // what the mistake coach reads later: timing error per step (ms), and which strings / chord changes went wrong
+      const bad=R.filter(s=>!(s.pitch&&s.on));
+      saveExam({k:"r",sc,bpm:+rng.value,miss:bad.map(s=>s.k),dt:R.map(s=>s.dt==null?null:Math.round(s.dt*1000)),
+        ms:bad.map(s=>s.x.s).filter(Boolean),mc:bad.filter(s=>s.x.chord).map(s=>{const j=R.indexOf(s),p=j>0&&R[j-1].x.chord;return p&&p!==s.x.chord?`${p}>${s.x.chord}`:null}).filter(Boolean)});
       let m=`النغمات صح: ${Math.round(pn/n*100)}% · صح وبوقتها: ${sc}%. `;
       if(!pass)m+="بدك ٨٠%. "+(pn/n>=.8?"النغمات منيحة، المشكلة بالوقت: خلّي المترونوم يقودك.":"ارجع لتمرين «٢ متوسط».");
       else if(part)m+="زبط المقطع! هلأ جرّبه كامل (ألغِ المقطع A–B).";
@@ -184,10 +193,27 @@ W.coach=(el,cfg)=>{
       if(rex!==tok)return;if(!el.isConnected){endWait();return}
       while(clickT<end&&clickT<c.currentTime+.2){click(clickT,beat%bb===0);clickT+=sp;beat++}
       const now=c.currentTime-lat,onset=loud(r)&&r.rms>prev*1.35;prev=r.rms;
-      R.forEach(s=>{if(now<s.a||now>s.b)return;if(loud(r))s.heard=1;if(matches(s.x,r,true))s.pitch=1;if(onset&&Math.abs(now-T[s.k])<=tol)s.on=1});
+      R.forEach(s=>{if(now<s.a||now>s.b)return;if(loud(r))s.heard=1;if(matches(s.x,r,true))s.pitch=1});
+      if(onset){let near=null;R.forEach(s=>{if(!near||Math.abs(now-T[s.k])<Math.abs(now-T[near.k]))near=s});
+        const d=near&&now-T[near.k];if(near&&Math.abs(d)<=reachW&&(near.dt==null||Math.abs(d)<Math.abs(near.dt)))near.dt=d}
       if(c.currentTime>end+.4)finish();
     });
   };
+  el.querySelector(".rexam").onclick=()=>runTake(true);
+  el.querySelector(".recb").onclick=()=>runTake(false);
+
+  // The take: play it alone, together with the coach (the coach is placed where the beats were), or keep it.
+  let rec=null;
+  const startRec=()=>{if(!window.MediaRecorder||!Mic.stream)return null;
+    try{const r=new MediaRecorder(Mic.stream),ch=[];r.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};r.onstop=()=>showTake(new Blob(ch,{type:r.mimeType}),r.meta);r.start();return r}catch(e){return null}};
+  const showTake=(blob,m)=>{if(!m||!blob.size||!el.isConnected)return;const tk=$(".take");
+    tk.innerHTML=`<b>تسجيلك</b><audio controls src="${URL.createObjectURL(blob)}"></audio><div class="pats"><button class="chip tog">اسمعه مع المدرّب</button><button class="chip tsv">احفظه كأحسن تسجيل</button></div>`;
+    tk.querySelector(".tog").onclick=()=>playTogether(blob,m);
+    tk.querySelector(".tsv").onclick=async e=>{try{await TAKES.put(hKey(),{blob,d:dayKey(new Date()),sc:m.sc,bpm:m.bpm,t:document.title.split(" · ")[0]});e.target.textContent="✓ انحفظ (بتلاقيه بصفحة تقدّمي)"}catch(err){e.target.textContent="ما قدرت أحفظه على هاد المتصفح"}}};
+  const playTogether=async(blob,m)=>{stopAll();const c=ac();let buf;
+    try{buf=await c.decodeAudioData(await blob.arrayBuffer())}catch(e){wmsg.textContent="هاد المتصفح ما بيقدر يشغّل التسجيل مع المدرّب. اسمعه لحاله.";return}
+    const s=c.createBufferSource();s.buffer=buf;s.connect(c.destination);const T0=c.currentTime+.2;s.start(T0);
+    for(let k=m.lo;k<=m.hi;k++)soundAt(m.ev[k],T0+m.off+(m.T[k]-m.t0)+m.lat-c.currentTime)};
   const LV=[.6,.8,1],LVT=["سهل: أول جزء ببطء. اعزفه ٣ مرات نظيف ورا بعض.","متوسط: كامل على ٨٠% من السرعة، ٣ مرات نظيف.","الهدف: كامل على السرعة المطلوبة. لما يزبط، افتح «خيارات أكتر» وجرّب امتحانات المايك."];
   const setLevel=l=>{stop();if(waitOn)endWait();const base=tracks[ti].bpm||60;rng.value=Math.round(base*LV[l]);v.textContent=rng.value;
     if(l===0){let acc=0,k=0;const lim=Math.min(8,EV.reduce((a,e)=>a+e.d,0)/2);while(k<N-1&&acc+EV[k].d<=lim){acc+=EV[k].d;k++}A=0;B=Math.max(0,k-1);abB.textContent="إلغاء المقطع";abB.classList.add("on")}

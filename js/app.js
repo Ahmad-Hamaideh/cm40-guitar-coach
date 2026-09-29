@@ -11,11 +11,11 @@ const FOOT=`<footer>التقدّم محفوظ على هاد الجهاز وال�
 function renderHome(){
   const n=ALL.filter(l=>done[l.id]).length,nx=ALL.find(l=>!done[l.id])||ALL[0],st=streak(),mins=Math.round(Object.values(LS("cm40-log",{})).reduce((a,b)=>a+b,0));
   const plan=sessionPlan(),total=plan.reduce((a,s)=>a+s.min,0);
-  const tiles=[["#/learn","موسوعة التعلّم السريع","١٢ مبدأ علمي + كل التريكات",`<div class="tpic">${LP.chunk}</div>`],["#/chords","مكتبة الكوردات",`${LIB.length} كورد بالإيد والصوت`,`<div class="tpic">${chordSVG(CH.Am)}</div>`],["#/songs","مكتبة الأغاني",`${SONGS.length} أغاني ومقطوعات`,`<div class="tpic">${ICO.guitar}</div>`],["#/ear","تدريب الأذن","كبير ولا صغير، المسافات، الأوتار",`<div class="tpic">${ICO.ear}</div>`],["#/progress","تقدّمي","أيام، دقايق، أرقام",`<div class="tpic">${ICO.metro}</div>`]];
+  const tiles=[["#/learn","موسوعة التعلّم السريع","١٢ مبدأ علمي + كل التريكات",`<div class="tpic">${LP.chunk}</div>`],["#/chords","مكتبة الكوردات",`${LIB.length} كورد بالإيد والصوت`,`<div class="tpic">${chordSVG(CH.Am)}</div>`],["#/songs","مكتبة الأغاني",`${SONGS.length} أغاني ومقطوعات`,`<div class="tpic">${ICO.guitar}</div>`],["#/ear","تدريب الأذن","كبير ولا صغير، المسافات، الأوتار",`<div class="tpic">${ICO.ear}</div>`],["#/challenge","تحدّي الأسبوع",`${challenge().l.t}: أصعب مقطع`,`<div class="tpic">${ICO.metro}</div>`],["#/progress","تقدّمي","أيام، دقايق، أرقام",`<div class="tpic">${ICO.metro}</div>`]];
   view.innerHTML=`<section class="dash">
     <div class="dhero"><div class="eyebrow">Yamaha CM40 · جيتار كلاسيك</div><h1>${n?"أهلاً رجعت!":"أهلاً! يلا نبلّش"}</h1>
       <p class="lead">جيتار كامل وإيدين بيعزفوا قدّامك بصوت حقيقي، وبعدين دورك. والمايك بيسمعك وبيستنّاك لحد ما تعزف صح.</p>
-      <div class="dstats"><div><b class="mono">${st}</b><span>يوم ورا بعض</span></div><div><b class="mono">${n}/${ALL.length}</b><span>درس</span></div><div><b class="mono">${mins}</b><span>دقيقة تمرين</span></div></div></div>
+      <div class="dstats"><div><b class="mono">${st}</b><span>يوم ورا بعض</span></div><div><b class="mono">${n}/${ALL.length}</b><span>درس</span></div><div><b class="mono">${mins}</b><span>دقيقة تمرين</span></div></div>${weekBar()}</div>
     <a class="dtoday" href="#/today"><span class="tag">تمرين اليوم · ${total} دقيقة</span><h2>جلستك جاهزة</h2><ol>${plan.map(s=>`<li>${s.t}<span class="meta">${s.min} د</span></li>`).join("")}</ol><span class="btn big">ابدأ التمرين</span></a>
   </section>
   <a class="dnext" href="#/l/${nx.id}"><span class="meta">${n?"كمّل من وين وقفت":"أول درس"}</span><b>درس ${nx.no} · ${nx.t}</b><span class="meta">${nx.goal}</span></a>
@@ -76,6 +76,7 @@ const ROUTES=[
   [/^#\/progress$/,()=>{renderProgress(view);return "تقدّمي"},"#/progress"],
   [/^#\/ear$/,()=>{renderEar(view);return "تدريب الأذن"},"#/ear"],
   [/^#\/learn$/,()=>{renderLearn(view);return "موسوعة التعلّم السريع"},"#/learn"],
+  [/^#\/challenge$/,()=>{renderChallenge(view);return "تحدّي الأسبوع"}],
   [/^#\/mic$/,()=>{renderMic(view);return "ضبط المايك"}],
   [/^#\/test$/,()=>{renderTest(view);return "تجربة المبتدئين"}],
   [/^#\/help/,()=>{renderHelp();return "عيادة المشاكل"},"#/help"],
