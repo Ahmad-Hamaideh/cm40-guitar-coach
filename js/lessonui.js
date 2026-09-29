@@ -62,15 +62,25 @@ function makeQuiz(l){
   return qs;
 }
 
+// A real-hands clip for a step, if one is listed in videos/manifest.json as "n2-1": "videos/n2-1.mp4"
+// or {"yt":"VIDEO_ID","t":42} (opens YouTube at that second).
+let STEPVID={};
+function stepVid(l,i){const v=STEPVID[`${l.id}-${i+1}`];if(!v)return "";
+  if(v.yt)return `<a class="svid" href="https://www.youtube.com/watch?v=${encodeURIComponent(v.yt)}&t=${+v.t||0}s" target="_blank" rel="noopener">${ICON_PLAY}شوف هالخطوة بإيد حقيقية (${Math.floor((+v.t||0)/60)}:${String((+v.t||0)%60).padStart(2,"0")})</a>`;
+  return `<details class="svid"><summary>${ICON_PLAY}شوف هالخطوة بإيد حقيقية</summary><video src="${v}" loop muted playsinline controls preload="none"></video>
+  <div class="pats"><button class="chip" data-sp=".5">نص السرعة</button><button class="chip on" data-sp="1">عادي</button><button class="chip" data-mir>اقلب</button></div></details>`}
 function lessonBody(l,host){
   const chs=lessonChords(l),qs=makeQuiz(l);
   let best={};try{best=JSON.parse(localStorage.getItem("cm40-quiz"))||{}}catch(e){}
   host.innerHTML=`<div class="ltabs" role="tablist">${[["watch","شوف"],["learn","افهم"],["warn","انتبه"],["quiz","اتأكد"]].map(([k,t],i)=>`<button role="tab" class="${i?"":"on"}" data-t="${k}">${t}${k==="quiz"&&best[l.id]!=null?` <small class="mono">${best[l.id]}/${qs.length}</small>`:""}</button>`).join("")}</div>
   <section class="lt" data-t="watch"><div class="figs"></div><div class="trick"><b>تريك:</b> ${l.trick}</div></section>
-  <section class="lt" data-t="learn" hidden><div class="slides">${l.steps.map((s,i)=>`<div class="slide"${i?" hidden":""}><div class="spic">${stepPic(s,l,chs,i)}</div><div class="stext"><span class="sn mono">${i+1} / ${l.steps.length}</span><p>${s}</p></div></div>`).join("")}</div>
+  <section class="lt" data-t="learn" hidden><div class="slides">${l.steps.map((s,i)=>`<div class="slide"${i?" hidden":""}><div class="spic">${stepPic(s,l,chs,i)}</div><div class="stext"><span class="sn mono">${i+1} / ${l.steps.length}</span><p>${s}</p>${stepVid(l,i)}</div></div>`).join("")}</div>
     <div class="snav"><button class="btn ghost sp">السابقة</button><span class="sdots">${l.steps.map((_,i)=>`<i class="${i?"":"on"}"></i>`).join("")}</span><button class="btn sn2">الجاية</button></div></section>
   <section class="lt" data-t="warn" hidden><div class="mgrid">${l.mist.map(([x,o])=>{const p=pickPair(x+" "+o)||stepPic(o,l,chs);return `<div class="mcard">${p?`<div class="mpic">${p}</div>`:""}<p class="x">✗ ${x}</p><p class="ok">✓ ${o}</p></div>`}).join("")}</div></section>
   <section class="lt" data-t="quiz" hidden><p class="meta">${qs.length} أسئلة سريعة، اختيارية. بتساعدك تتأكد إنك فهمت.</p><div class="quiz"></div></section>`;
+  host.querySelectorAll("details.svid").forEach(d=>{const vd=d.querySelector("video");d.ontoggle=()=>d.open?vd.play().catch(()=>{}):vd.pause();
+    d.querySelector(".pats").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;if(b.dataset.mir!=null){vd.classList.toggle("mir");b.classList.toggle("on");return}
+      vd.playbackRate=+b.dataset.sp;d.querySelectorAll("[data-sp]").forEach(x=>x.classList.toggle("on",x===b))}});
   const tabs=host.querySelectorAll(".ltabs button"),secs=host.querySelectorAll(".lt");
   host.querySelector(".ltabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tabs.forEach(x=>x.classList.toggle("on",x===b));secs.forEach(s=>s.hidden=s.dataset.t!==b.dataset.t)};
   const slides=[...host.querySelectorAll(".slide")],dots=[...host.querySelectorAll(".sdots i")];let si=0;

@@ -1,5 +1,5 @@
 // Offline support: serve from cache right away, refresh the cache in the background.
-const CACHE="cm40-v10";
+const CACHE="cm40-v11";
 self.addEventListener("install",()=>self.skipWaiting());
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{

@@ -102,13 +102,21 @@ const songCoach=s=>{
 const stars=n=>`<span class="stars" aria-label="الصعوبة ${n} من 4">${[1,2,3,4].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</span>`;
 function renderSongs(view){
   view.innerHTML=`${crumb("<span>مكتبة الأغاني</span>")}<div class="uh"><span class="tag">مكتبة الأغاني</span><h2>أغاني ومقطوعات مع المدرّب</h2><p>مرتّبة من الأسهل للأصعب. كل وحدة إلها الدرس اللي بيحضّرك إلها.</p></div>
+  <section class="ppath"><h3>مسار المقطوعات: ٥ خطوات</h3><p class="meta">مقطوعات كاملة مرتّبة من الأسهل. كل وحدة بتفتح لما تتقن الدرس اللي قبلها.</p><ol>${PATH.map((id,i)=>{const x=SONGS.find(y=>y.id===id),l=songLesson(x),ok=done[l.id];return `<li class="${ok?"ok":""}"><a href="#/songs/${id}"><span class="mono">${i+1}</span><b>${x.t}</b><span class="meta">${x.by} · ${ok?"جاهز إلها":`بعد درس ${l.no}`}</span></a></li>`}).join("")}</ol></section>
   <div class="songgrid">${[...SONGS].sort((a,b)=>a.lvl-b.lvl).map(s=>{const l=songLesson(s),ok=done[l.id];return `<a class="scard" href="#/songs/${s.id}"><div class="sart">${ICO.guitar}</div><div><h3>${s.t}</h3><p class="meta">${s.by} · ${s.kind}</p><span class="arr">${arrOf(s)[0]}</span>${stars(s.lvl)}<div class="pats">${songChords(s).slice(0,6).map(c=>`<span class="chip">${c}</span>`).join("")}</div><p class="meta">${ok?"جاهز إلها":`بتصير جاهز بعد درس ${l.no}`}</p></div></a>`}).join("")}</div>`;
 }
+const PATH=["ode","romanza-full","andantino","sor22","lagrima"];
+const pathBox=s=>{const i=PATH.indexOf(s.id);if(i<0)return "";const l=songLesson(s),cfg=songCoach(s),bpm=cfg.tracks[0].bpm||60;
+  return `<div class="pbox"><b>المقطوعة ${i+1} من ٥ بالمسار</b><ul>
+  <li><b>قبلها:</b> ${done[l.id]?"✓":"○"} <a href="#/l/${l.id}">درس ${l.no}. ${l.t}</a>${i?` و ${PATH[i-1]&&SONGS.find(y=>y.id===PATH[i-1]).t}`:""}</li>
+  <li><b>السرعة الهدف:</b> ${bpm}. ابدأ بـ«١ سهل» (${Math.round(bpm*.6)}).</li>
+  <li><b>الأصابع:</b> الأرقام والألوان على الجيتار = الإيد الشمال${s.piece?" (مقترحة من البرنامج)":""}، والحروف p i m a تحت التاب = الإيد اليمين.</li>
+  <li><b>أصعب مقطع:</b> زر «أصعب مقطع» تحت الجيتار بيحدّده وبيبطّئه. ابدأ فيه قبل ما تعزفها كاملة.</li></ul></div>`};
 function renderSong(view,id){
   const s=SONGS.find(x=>x.id===id);if(!s)return renderSongs(view);
   const l=songLesson(s),chs=songChords(s);
   view.innerHTML=`${crumb(`<a href="#/songs">مكتبة الأغاني</a><span>›</span><span>${s.t}</span>`)}
-  <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header><p class="arrp"><span class="arr">${arrOf(s)[0]}</span> ${arrOf(s)[1]}</p><div class="figs"></div>
+  <article class="lesson"><header class="lh"><h2>${s.t}</h2><span class="meta">${s.by} · ${s.kind}</span>${stars(s.lvl)}</header>${pathBox(s)}<p class="arrp"><span class="arr">${arrOf(s)[0]}</span> ${arrOf(s)[1]}</p><div class="figs"></div>
   <div class="cols"><div><h4>الكوردات</h4><div class="pats">${chs.map(c=>LIB.includes(c)?`<a class="chip" href="#/chords/${encodeURIComponent(c)}">${c}</a>`:`<span class="chip">${c}</span>`).join("")||"<span class='meta'>لحن، بدون كوردات</span>"}</div></div>
   <div><h4>الدرس اللي بيحضّرك</h4><div class="pats"><a class="chip" href="#/l/${l.id}">${l.no}. ${l.t}</a></div>${s.src?`<h4 style="margin-top:12px">المصدر</h4><div class="vids"><a href="${s.src[1]}" target="_blank" rel="noopener">${ICON_PLAY}${s.src[0]}</a></div>`:""}</div></div></article>`;
   mountFig(view.querySelector(".figs"),{w:"coach",cfg:songCoach(s)});
@@ -198,6 +206,8 @@ function renderProgress(view){
   <div class="pgrid"><section class="pcard"><h3>أيام التمرين</h3><p class="meta">آخر ${W7} أسبوع. كل مربّع يوم، وكل ما كان أغمق ذهبي يعني تمرّنت أكتر.</p>${heat}</section>
   <section class="pcard"><h3>تبديل الكوردات (بالدقيقة)</h3><p class="meta">الخط الذهبي = ٦٠، الهدف.</p>${chart}</section>
   <section class="pcard"><h3>الوحدات</h3>${UNITS.map(u=>{const d=u.lessons.filter(l=>done[l.id]).length;return `<div class="urow"><span>${u.id} · ${u.name}</span><div class="bar"><i style="width:${d/u.lessons.length*100}%"></i></div><span class="mono">${d}/${u.lessons.length}</span></div>`}).join("")}</section>
+  <section class="pcard"><h3>ملاحظاتك على الدروس</h3>${(()=>{const fb=Object.entries(LS("cm40-fb",{})).filter(([,x])=>!x.ok);return fb.length?fb.map(([id,x])=>{const l=ALL.find(y=>y.id===id);return l?`<div class="urow"><a href="#/l/${id}">${l.no}. ${l.t}</a><span class="meta">${x.why||"مش واضح"}</span></div>`:""}).join(""):`<p class="meta">ما في دروس معلّمها «مش واضح».</p>`})()}</section>
+  <section class="pcard"><h3>آخر الامتحانات</h3>${(()=>{const ex=Object.entries(LS("cm40-exam",{})).map(([k,a])=>[k,a[a.length-1]]).sort((p,q)=>p[1].d<q[1].d?1:-1).slice(0,8);return ex.length?ex.map(([k,x])=>{const id=k.split("|")[0],l=ALL.find(y=>y.id===id);return `<div class="urow"><span>${l?`${l.no}. ${l.t}`:decodeURIComponent(id.replace("#/",""))}</span><span class="mono">${x.sc}%</span><span class="meta">${x.k==="r"?"إيقاع":"نغمات"} · ${x.d}</span></div>`}).join(""):`<p class="meta">لسا ما عملت امتحان بالمايك.</p>`})()}</section>
   <section class="pcard"><h3>احفظ تقدّمك</h3><p class="meta">التقدّم محفوظ بهاد المتصفح بس. نزّل نسخة، وارجعها على أي جهاز أو بعد ما تمسح المتصفح.</p><div class="ctrl"><button class="btn ghost pexp">نزّل نسخة</button><label class="btn ghost">ارجع نسخة<input type="file" accept=".json,application/json" class="pimp" hidden></label></div><p class="meta pmsg"></p></section>
   <section class="pcard"><h3>الدورة بدون نت</h3><p class="meta poffm">بفحص…</p><button class="btn ghost poff">نزّل كل الدورة</button></section>
   <section class="pcard"><h3>تدريب الأذن</h3>${Object.keys(EAR).map(k=>`<div class="urow"><span>${EAR[k].n}</span><span class="mono">${ear[k]||0}</span><span class="meta">أحسن سلسلة صح</span></div>`).join("")}</section></div>`;
@@ -205,10 +215,11 @@ function renderProgress(view){
 }
 
 // ---------- backup and offline ----------
+function exportProgress(name="progress"){const o={};Object.keys(localStorage).filter(k=>k.startsWith("cm40-")).forEach(k=>o[k]=localStorage.getItem(k));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,1)],{type:"application/json"}));a.download=`cm40-${name}-${dayKey(new Date())}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function wireBackup(view){
   const msg=view.querySelector(".pmsg");
-  view.querySelector(".pexp").onclick=()=>{const o={};Object.keys(localStorage).filter(k=>k.startsWith("cm40-")).forEach(k=>o[k]=localStorage.getItem(k));
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,1)],{type:"application/json"}));a.download=`cm40-progress-${dayKey(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);msg.textContent="نزلت النسخة. خبّيها بمكان آمن."};
+  view.querySelector(".pexp").onclick=()=>{exportProgress();msg.textContent="نزلت النسخة. خبّيها بمكان آمن."};
   view.querySelector(".pimp").onchange=async e=>{const f=e.target.files[0];if(!f)return;
     let o;try{o=JSON.parse(await f.text())}catch(err){msg.textContent="هاد الملف مش نسخة تقدّم.";return}
     const ks=o&&typeof o==="object"?Object.keys(o).filter(k=>/^cm40-[a-z]+$/.test(k)&&typeof o[k]==="string"):[];
@@ -219,7 +230,7 @@ function wireBackup(view){
   const om=view.querySelector(".poffm"),ob=view.querySelector(".poff");
   if(!("caches" in window)||!navigator.serviceWorker||!navigator.serviceWorker.controller){om.textContent="بيشتغل من الرابط الرسمي بس (https)، بعد ما تفتح الموقع مرة.";ob.hidden=true;return}
   const urls=["./","index.html","manifest.webmanifest","icon.svg",...[...document.scripts].map(x=>x.getAttribute("src")).filter(Boolean),...Array.from({length:47},(_,i)=>`samples/${40+i}.mp3`)];
-  const cache=async()=>caches.open((await caches.keys()).find(k=>k.startsWith("cm40-"))||"cm40-v10");
+  const cache=async()=>caches.open((await caches.keys()).find(k=>k.startsWith("cm40-"))||"cm40-v11");
   const count=async c=>(await Promise.all(urls.map(u=>c.match(u)))).filter(Boolean).length;
   const status=async()=>{const n=await count(await cache());om.textContent=n===urls.length?`✓ الدورة كاملة محمّلة (${n}/${urls.length} ملف). بتشتغل بدون نت.`:`محمّل ${n} من ${urls.length} ملف. نزّل الباقي عشان تشتغل بدون نت.`;ob.hidden=n===urls.length};
   ob.onclick=async()=>{ob.disabled=true;const c=await cache();let k=0,bad=0;
@@ -272,3 +283,37 @@ UNITS.flatMap(u=>u.lessons).forEach(l=>{
 // Arabic video series per unit (whole series, not an exact match for each lesson)
 const AR_SERIES={A:["سلسلة عربية للمبتدئين (كاملة)","https://www.youtube.com/playlist?list=PLldfRVxgJg3vYVbA2mwbiL9ZQT3YVfUMz"],B:["سلسلة عربية للمبتدئين (كاملة)","https://www.youtube.com/playlist?list=PLldfRVxgJg3vYVbA2mwbiL9ZQT3YVfUMz"],C:["كورس جيتار من الصفر (عربي)","https://www.youtube.com/playlist?list=PLc76eLZH8vnVexTkoAiLkkmUEw90iWUdy"],D:["قناة Arabic Guitar Click (كلاسيك بالعربي)","https://www.youtube.com/c/ArabicGuitarClick"],E:["قناة Arabic Guitar Click (كلاسيك بالعربي)","https://www.youtube.com/c/ArabicGuitarClick"],F:["Ahmed Ibrahim Guitar Academy (عربي)","https://www.youtube.com/@ahmedibrahimguitaracademy2843"],G:["Ahmed Ibrahim Guitar Academy (عربي)","https://www.youtube.com/@ahmedibrahimguitaracademy2843"]};
 UNITS.forEach(u=>u.lessons.forEach(l=>{if(AR_SERIES[u.id]&&!l.vids.some(v=>v[1]===AR_SERIES[u.id][1]))l.vids.push(AR_SERIES[u.id])}));
+
+// ---------- mic setup ----------
+function renderMic(view){
+  view.innerHTML=`${crumb("<span>ضبط المايك</span>")}<div class="uh"><span class="tag">ضبط المايك</span><h2>خلّي المايك يسمعك صح</h2><p>الامتحانات بتعتمد على المايك. اضبطه مرة على كل جهاز، وإذا حسّيته ظالمك شوف شو سامع.</p></div>
+  <div class="pgrid"><section class="pcard"><h3>١. الضبط (دقيقة)</h3><div class="w-cal"></div></section>
+  <section class="pcard"><h3>٢. شو سامع؟</h3><p class="meta">اعزف نغمة: لازم يطلع اسمها صح، والشريط يتعدّى الخط، و«ضربة» تضوي لحظة ما تضرب.</p><div class="w-hear"></div></section>
+  <section class="pcard"><h3>إذا ما زبط</h3><ul class="tips"><li>اسم النغمة غلط بأوكتاف؟ عادي بالأوتار الغليظة بالأجهزة الضعيفة. بالتمرين بنسامح، بالامتحان لا، فقرّب الجهاز.</li><li>الشريط ما بيتعدّى الخط؟ قرّب الجهاز أو اعزف أقوى شوي.</li><li>«ضربة» ما بتضوي؟ الغرفة فيها ضجة: مكيّف، تلفزيون، ناس بيحكوا.</li><li>سمّاعات بلوتوث بتأخّر الصوت كتير. استعمل سمّاعة الجهاز نفسه أو سلك.</li></ul></section></div>`;
+  W.mcal(view.querySelector(".w-cal"));W.mhear(view.querySelector(".w-hear"));
+}
+
+// ---------- beginner test: three tasks with no outside help ----------
+function renderTest(view){
+  const T=[{t:"دوزن الجيتار",d:"دوزن الأوتار الستة بالمايك لحد ما كل وتر يطلع «مزبوط ✓».",fig:{w:"mtuner"}},
+    {t:"اعزف تمرين درس 6",d:"افتح «خيارات أكتر» تحت الجيتار ← «امتحان بالإيقاع». النجاح = ٨٠٪ أو أكتر.",fig:ALL.find(l=>l.id==="n6").figs.find(f=>f.w==="coach")},
+    {t:"Em ↔ Am دقيقة",d:"اضغط «ابدأ الدقيقة» وبدّل بين الكوردين قد ما تقدر. الهدف ٢٠ تبديلة أو أكتر لمبتدئ.",fig:{w:"sw",cfg:{pairs:[["Em","Am"]]}}}];
+  const res=LS("cm40-test",[]);let i=0,t0=0,cur=[];
+  view.innerHTML=`${crumb("<span>تجربة المبتدئين</span>")}<div class="uh"><span class="tag">تجربة المبتدئين</span><h2>٣ مهام، بدون مساعدة</h2>
+  <p><b>للي بيدير التجربة:</b> اعطي الجهاز والجيتار للمجرّب، واحكيله «اعمل اللي مكتوب». لا تشرح ولا تساعد، وسجّل بس وين علق. بآخر التجربة نزّل النتائج.</p></div>
+  <ol class="tsteps">${T.map((x,k)=>`<li data-k="${k}"><b>${k+1}. ${x.t}</b></li>`).join("")}</ol>
+  <section class="tnow"><header class="lh"><h3 class="tt"></h3></header><p class="td"></p><div class="figs"></div>
+  <div class="ctrl"><span class="meta">كيف زبطت؟</span><button class="btn" data-r="alone">زبطت لحالي</button><button class="btn ghost" data-r="help">احتجت مساعدة</button><button class="btn ghost" data-r="fail">ما زبطت</button></div>
+  <input class="tnote" placeholder="وين علق؟ (اختياري)" aria-label="ملاحظة"></section>
+  <section class="pcard tsum"><h3>النتائج (${res.length} تجربة)</h3>${res.map((r,k)=>`<div class="urow"><span>تجربة ${k+1} · ${r.d}</span><span>${r.tasks.map(x=>({alone:"✓",help:"½",fail:"✗"})[x.r]).join(" ")}</span><span class="meta">${r.tasks.map(x=>Math.round(x.sec/60)+"د").join(" / ")}</span></div>`).join("")||"<p class='meta'>لسا ما في.</p>"}
+  <p class="meta">الهدف: ٤ من ٥ مجرّبين يخلّصوا الثلاث مهام «لحالهم».</p><div class="ctrl"><button class="btn ghost texp">نزّل النتائج والملاحظات</button></div></section>`;
+  const figs=view.querySelector(".figs"),note=view.querySelector(".tnote");
+  const load=()=>{stopAll();const x=T[i];view.querySelector(".tt").textContent=`${i+1}. ${x.t}`;view.querySelector(".td").textContent=x.d;figs.innerHTML="";mountFig(figs,x.fig);note.value="";t0=Date.now();
+    view.querySelectorAll(".tsteps li").forEach(li=>{li.classList.toggle("on",+li.dataset.k===i);li.classList.toggle("ok",+li.dataset.k<i)})};
+  view.querySelector(".tnow .ctrl").onclick=e=>{const b=e.target.closest("[data-r]");if(!b)return;
+    cur.push({r:b.dataset.r,sec:Math.round((Date.now()-t0)/1000),note:note.value.trim()});i++;
+    if(i<T.length)return load();
+    stopAll();res.push({d:dayKey(new Date()),tasks:cur});LSset("cm40-test",res);renderTest(view)};
+  view.querySelector(".texp").onclick=()=>exportProgress("test");
+  load();
+}

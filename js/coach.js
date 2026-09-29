@@ -46,3 +46,15 @@ function laneSVG(EV,bar){
   return {s:head+s+"</svg>",xs};
 }
 
+
+// The hardest stretch of a track: `n` steps with the most pressed-fret travel, crowded notes and chord changes.
+// ponytail: a plain difficulty heuristic, not a musical analysis; good enough to pre-select a practice loop.
+function hardSec(EV,n=8){
+  if(EV.length<n*2)return null;
+  let pf=0,pc=null;const sc=EV.map(e=>{let v=0;
+    if(e.c){v=(CH[e.c].barre?3:1)+(pc&&pc!==e.c?2:0);pc=e.c}
+    else if(e.n){const fr=e.n.map(x=>x[1]).filter(f=>f>0),hi=fr.length?Math.max(...fr):pf;v=e.n.length+Math.abs(hi-pf)/2+(hi>5?1:0)+(e.sl?1:0)+(e.d<1?.5:0);pf=hi}
+    return v});
+  let best=0,bi=0,sum=0;sc.forEach((v,i)=>{sum+=v;if(i>=n)sum-=sc[i-n];if(i>=n-1&&sum>best){best=sum;bi=i-n+1}});
+  return [bi,bi+n-1];
+}

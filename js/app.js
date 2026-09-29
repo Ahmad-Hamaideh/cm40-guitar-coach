@@ -23,7 +23,7 @@ function renderHome(){
   <h2 class="sech">كل الدروس</h2>
   <div class="units">${UNITS.map(u=>{const d=u.lessons.filter(l=>done[l.id]).length;return `<section class="ucard" id="u${u.id}"><span class="tag">الوحدة ${u.id}</span><h3>${u.name}</h3><p class="meta">${u.sub}</p><div class="bar"><i style="width:${d/u.lessons.length*100}%"></i></div>
     <ol>${u.lessons.map(l=>`<li class="${done[l.id]?"done":""}"><a href="#/l/${l.id}"><span class="n mono">${l.no}</span><i></i><span class="t">${l.t}</span><span class="meta">${l.m} د</span></a></li>`).join("")}</ol></section>`}).join("")}</div>
-  <p style="margin-top:28px"><a href="#/help">عندك مشكلة؟ عيادة المشاكل والروتين اليومي ←</a></p>${FOOT}`;
+  <p style="margin-top:28px"><a href="#/help">عندك مشكلة؟ عيادة المشاكل والروتين اليومي ←</a> · <a href="#/mic">ضبط المايك</a> · <a href="#/test">تجربة المبتدئين</a></p>${FOOT}`;
 }
 
 // Watched, practised, note check and rhythm exam are shown apart from "mastered" (the checkbox).
@@ -39,6 +39,7 @@ function renderLesson(l){
     <p class="goal"><b>الهدف:</b> ${l.goal}</p><div class="lbody"></div>
     <div class="foot"><div class="vids">${l.vids.length?l.vids.map(([t,h])=>`<a href="${h}" target="_blank" rel="noopener">${ICON_PLAY}${t}</a>`).join(""):`<span class="meta">هاد الدرس ما بدّه فيديو، الرسمات بتكفّي.</span>`}</div>
     <label class="done"><input type="checkbox" data-l="${l.id}" ${done[l.id]?"checked":""}> أتقنته</label></div><div class="mwrap">${mastery(l)}</div>
+    <div class="fb"><span class="meta">الدرس كان واضح؟</span>${[["1","واضح"],["0","مش واضح"]].map(([k,t])=>`<button class="chip${String(+((LS("cm40-fb",{})[l.id]||{}).ok??-1))===k?" on":""}" data-f="${k}">${t}</button>`).join("")}<input class="fbw" placeholder="شو اللي ما كان واضح؟" aria-label="شو اللي ما كان واضح" value="${((LS("cm40-fb",{})[l.id]||{}).why||"").replace(/"/g,"&quot;")}" ${(LS("cm40-fb",{})[l.id]||{}).ok===false?"":"hidden"}></div>
     <div class="rate"><span class="meta">الدرس كان:</span>${[["easy","سهل"],["ok","مناسب"],["hard","صعب"]].map(([k,t])=>`<button class="chip${(LS("cm40-rev",{})[l.id]||{}).rate===k?" on":""}" data-r="${k}">${t}</button>`).join("")}<span class="meta rmsg"></span></div></article>
   <nav class="lnav">${prev?`<a href="#/l/${prev.id}"><small>الدرس اللي قبل</small>${prev.no}. ${prev.t}</a>`:"<span></span>"}${next?`<a class="nx" href="#/l/${next.id}"><small>الدرس الجاي</small>${next.no}. ${next.t}</a>`:`<a class="nx" href="#/"><small>خلّصت الدورة!</small>رجوع للرئيسية</a>`}</nav>`;
   const figs=lessonBody(l,view.querySelector(".lbody"));
@@ -75,6 +76,8 @@ const ROUTES=[
   [/^#\/progress$/,()=>{renderProgress(view);return "تقدّمي"},"#/progress"],
   [/^#\/ear$/,()=>{renderEar(view);return "تدريب الأذن"},"#/ear"],
   [/^#\/learn$/,()=>{renderLearn(view);return "موسوعة التعلّم السريع"},"#/learn"],
+  [/^#\/mic$/,()=>{renderMic(view);return "ضبط المايك"}],
+  [/^#\/test$/,()=>{renderTest(view);return "تجربة المبتدئين"}],
   [/^#\/help/,()=>{renderHelp();return "عيادة المشاكل"},"#/help"],
 ];
 function route(){
@@ -91,8 +94,14 @@ view.addEventListener("cm40-pass",e=>{const art=e.target.closest(".lesson"),l=ar
   const kind=(e.detail||{}).kind;setSt(l.id,kind==="rhy"?"rhy":"notes",1);
   if(kind==="rhy"){done[l.id]=true;save();markLearned(l.id);const cb=art.querySelector("input[data-l]");if(cb)cb.checked=true}
   art.querySelector(".mwrap").innerHTML=mastery(l)});
+// "was this lesson clear?" stays on this device and goes out with the progress backup
+const setFb=(id,x)=>{const fb=LS("cm40-fb",{});fb[id]={...(fb[id]||{}),...x,d:dayKey(new Date())};LSset("cm40-fb",fb)};
+view.addEventListener("click",e=>{const b=e.target.closest(".fb .chip");if(!b)return;const art=b.closest(".lesson"),ok=b.dataset.f==="1";setFb(art.id,{ok});
+  art.querySelectorAll(".fb .chip").forEach(x=>x.classList.toggle("on",x===b));const w=art.querySelector(".fbw");w.hidden=ok;if(!ok)w.focus()});
+view.addEventListener("change",e=>{if(e.target.matches(".fbw"))setFb(e.target.closest(".lesson").id,{why:e.target.value.trim().slice(0,300)})});
 view.addEventListener("click",e=>{const b=e.target.closest(".rate .chip");if(!b)return;const art=b.closest(".lesson");rateLesson(art.id,b.dataset.r);art.querySelectorAll(".rate .chip").forEach(x=>x.classList.toggle("on",x===b));
   art.querySelector(".rmsg").textContent={easy:"تمام، رح نراجعه أقل.",ok:"تمام، رح يرجعلك مراجعة بعد كم يوم.",hard:"رح يرجعلك بتمرين اليوم. ابدأ بتمرين «١ سهل» على ٦٠%."}[b.dataset.r]});
+fetch("videos/manifest.json").then(r=>r.ok?r.json():{}).then(j=>{STEPVID=j;if(Object.keys(j).length&&/^#\/l\//.test(location.hash))route()}).catch(()=>{});
 addEventListener("hashchange",route);
 route();
 

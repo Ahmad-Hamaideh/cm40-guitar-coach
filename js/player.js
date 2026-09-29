@@ -12,11 +12,11 @@ W.coach=(el,cfg)=>{
   <div class="legend">${[1,2,3,4].map(n=>`<span><i style="background:var(--f${n})"></i>${n} ${["سبابة","وسطى","بنصر","خنصر"][n-1]}</span>`).join("")}<span>الإصبع الباهت = مرفوع ومستنّي</span><span>○ وتر مفتوح · × لا تعزفه</span></div>
   <div class="tabwrap lane" title="اضغط على أي مكان بالتاب لتروح عليه"></div>
   <div class="ctrl pc"><button class="btn play">▶ خلّيه يعزف</button><button class="btn ghost prv" aria-label="خطوة لورا">‹</button><button class="btn ghost nxt" aria-label="خطوة لقدّام">›</button><label class="meta">السرعة <input type="range" class="rng" min="30" max="160"><b class="mono v"></b></label></div>
-  <div class="ctrl lvls"><span class="meta">التمرين:</span><button class="chip lv" data-l="0">١ سهل</button><button class="chip lv" data-l="1">٢ متوسط</button><button class="chip lv" data-l="2">٣ الهدف</button><button class="chip wait">المايك: بستنّاك</button></div>
+  <div class="ctrl lvls"><span class="meta">التمرين:</span><button class="chip lv" data-l="0">١ سهل</button><button class="chip lv" data-l="1">٢ متوسط</button><button class="chip lv" data-l="2">٣ الهدف</button><button class="chip wait">المايك: بستنّاك</button><button class="chip hard" hidden>أصعب مقطع</button></div>
   <details class="more"><summary class="meta">خيارات أكتر: عدّ، تكرار، مقطع، امتحانات المايك</summary>
   <div class="ctrl"><label class="meta"><input type="checkbox" class="cin" checked> عدّ قبل ما يبلّش</label><label class="meta"><input type="checkbox" class="lp" checked> كرّر</label><label class="meta"><input type="checkbox" class="turn"> هو بيعزف وبعدين أنا</label><button class="chip ab">حدّد مقطع (A–B)</button></div>
-  <div class="ctrl"><button class="chip exam">فحص النغمات</button><button class="chip rexam">امتحان بالإيقاع</button><span class="meta">فحص النغمات: كل نغمة صح؟ · الإيقاع: صح وبوقتها مع المترونوم.</span></div></details>
-  <p class="wmsg"></p>`;
+  <div class="ctrl"><button class="chip exam">فحص النغمات</button><button class="chip rexam">امتحان بالإيقاع</button><span class="meta">فحص النغمات: كل نغمة صح؟ · الإيقاع: صح وبوقتها مع المترونوم. <a href="#/mic">المايك مش مزبوط؟ اضبطه</a></span></div></details>
+  <p class="wmsg"></p><p class="meta hist"></p>`;
   const $=q=>el.querySelector(q);
   const btn=$(".play"),rng=$(".rng"),v=$(".v"),lp=$(".lp"),turn=$(".turn"),cin=$(".cin"),laneEl=$(".lane"),turnEl=$(".cturn"),abB=$(".ab"),waitB=$(".wait"),wmsg=$(".wmsg");
   const gv=new GuitarView($(".gvh"));
@@ -93,8 +93,18 @@ W.coach=(el,cfg)=>{
   const showStep=()=>{const k=steps[wi];show(k);hold=0;heard=false;t0s=performance.now();wmsg.className="wmsg";wmsg.innerHTML=`<span class="mono">${wi+1}/${steps.length}</span> ${wText(expect(k))}. <span class="meta">أنا سامعك.</span>`};
   // Mic judging. The room is measured first so noise isn't taken for playing. Exams want the exact
   // octave (right string and fret); practice mode forgives an octave.
-  const LAT=.07; // the analyser hears ~70 ms late; tune if attacks read early or late on real devices
-  let noise=.006,heard=false,sil=0,full=true,rex=null;
+  // how late the analyser hears: measured per device on #/mic, ~70 ms if never calibrated
+  const LAT=()=>CAL().lat??.07;
+  let noise=.006,heard=false,sil=0,full=true,rex=null,missK=[];
+
+  // Exam history per track: last scores, and a red mark above the tab where recent attempts went wrong.
+  const hKey=()=>(lessonId()||location.hash)+"|"+ti;
+  const saveExam=rec=>{const h=LS("cm40-exam",{}),k=hKey();h[k]=[...(h[k]||[]),{d:dayKey(new Date()),...rec}].slice(-10);LSset("cm40-exam",h);drawHist()};
+  const drawHist=()=>{const a=LS("cm40-exam",{})[hKey()]||[],cnt={};
+    $(".hist").textContent=a.length?`محاولاتك: ${a.slice(-5).map(x=>`${x.sc}% ${x.k==="r"?"إيقاع":"نغمات"}`).join(" · ")}. الأحمر فوق التاب = وين غلطت بآخر محاولات.`:"";
+    laneEl.querySelectorAll(".miss").forEach(x=>x.remove());a.slice(-5).forEach(x=>(x.miss||[]).forEach(k=>cnt[k]=(cnt[k]||0)+1));
+    const svg=laneEl.querySelector("svg");Object.entries(cnt).forEach(([k,c])=>{const xy=lane.xs[k];if(!xy)return;const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+      [["class","miss"],["x",xy[0]+1],["y",0],["width",xy[1]-2],["height",5],["rx",2],["fill","#D0654F"],["opacity",Math.min(1,.25+c*.18)]].forEach(([n,v])=>r.setAttribute(n,v));svg.appendChild(r)})};
   const loud=r=>r.rms>Math.max(.012,noise*2.5);
   const matches=(x,r,strict)=>{if(!loud(r))return false;
     if(x.midi!=null){if(r.hz<=0)return false;const d=12*Math.log2(r.hz/mf(x.midi));return strict?Math.abs(d)<.5:Math.abs(d-12*Math.round(d/12))<.5&&Math.abs(d)<12.5}
@@ -103,7 +113,7 @@ W.coach=(el,cfg)=>{
   const onMic=r=>{
     if(!el.isConnected){endWait();return}if(hold<0)return;
     if(loud(r))heard=true;
-    if(exam&&performance.now()-t0s>4500){hold=-1;if(!heard)sil++;wmsg.className="wmsg";wmsg.textContent=heard?"✗ فاتت":"… ما سمعت إشي";setTimeout(nextExam,350);return}
+    if(exam&&performance.now()-t0s>4500){hold=-1;if(!heard)sil++;missK.push(steps[wi]);wmsg.className="wmsg";wmsg.textContent=heard?"✗ فاتت":"… ما سمعت إشي";setTimeout(nextExam,350);return}
     const ok=matches(expect(steps[wi]),r,exam);
     hold=ok?hold+1:0;
     if(hold>=3){gv.hit(EV[steps[wi]]);hold=-1;wmsg.className="wmsg good";wmsg.textContent="✓ صح!";if(exam){hits++;setTimeout(nextExam,350);return}setTimeout(()=>{if(!waitOn)return;wi=(wi+1)%steps.length;showStep()},450)}
@@ -116,7 +126,7 @@ W.coach=(el,cfg)=>{
     waitOn=true;waitB.classList.add("on");waitB.textContent="وقّف الانتظار";
     steps=buildSteps();wi=Math.max(0,steps.findIndex(k=>k>=cur));showStep();Mic.listen(onMic);
   };
-  const cantHear=(s,n)=>`ما قدرت أقيّمك: ${s} من ${n} ما وصلني صوتها. قرّب الجهاز من الجيتار (٣٠–٥٠ سم)، سكّر أي صوت حولك، وجرّب مرة ثانية.`;
+  const cantHear=(s,n)=>`ما قدرت أقيّمك: ${s} من ${n} ما وصلني صوتها. قرّب الجهاز من الجيتار (٣٠–٥٠ سم)، سكّر أي صوت حولك، وجرّب مرة ثانية. إذا ضلّت تصير: <a href="#/mic">اضبط المايك</a>.`;
   const passEv=kind=>el.dispatchEvent(new CustomEvent("cm40-pass",{bubbles:true,detail:{kind}}));
   const startMic=async()=>{
     if(waitOn){endWait();return false}stopAll();
@@ -127,13 +137,14 @@ W.coach=(el,cfg)=>{
   // Note check: every note or chord, one at a time, 4 seconds each. Covers the A–B section if one is set.
   const nextExam=()=>{if(!waitOn)return;wi++;if(wi<steps.length)return showStep();
     const n=steps.length,sc=Math.round(hits/n*100),pass=sc>=90,chords=steps.some(k=>EV[k].c);endWait();
-    if(sil>n*.3){wmsg.textContent=cantHear(sil,n);return}
+    if(sil>n*.3){wmsg.innerHTML=cantHear(sil,n);return}
+    saveExam({k:"n",sc,miss:missK});
     wmsg.className=pass?"wmsg good":"wmsg";
     wmsg.textContent=(pass?`نغماتك صح: ${sc}%.${full?"":" (هاد المقطع بس)"} الخطوة الجاية: «امتحان بالإيقاع».`:`${sc}% صح. بدك ٩٠%. ارجع لتمرين «٢ متوسط» وجرّب مرة ثانية.`)+(chords?" فحص الكوردات بالمايك تقريبي: اعزف كل كورد وتر وتر وتأكّد إن كل الأوتار بترن.":"");
     if(pass&&full)passEv("notes")};
   el.querySelector(".exam").onclick=async()=>{
     if(!await startMic())return;
-    full=A==null;steps=buildSteps().filter(k=>full||(k>=A&&k<=B));hits=0;sil=0;wi=0;
+    full=A==null;steps=buildSteps().filter(k=>full||(k>=A&&k<=B));hits=0;sil=0;wi=0;missK=[];
     await calibrate();if(!waitOn)return;
     wmsg.textContent=`فحص النغمات: ${steps.length} ${full?"":"(المقطع المحدّد) "}نغمة أو كورد. عندك ٤ ثواني لكل وحدة.`;
     setTimeout(()=>{if(waitOn){showStep();Mic.listen(onMic)}},1500)};
@@ -149,12 +160,13 @@ W.coach=(el,cfg)=>{
     const t0=t;for(let k=lo;k<=hi;k++){T[k]=t;vq.push({t,i:k});t+=EV[k].d*sp}
     const end=t,want=buildSteps().filter(k=>k>=lo&&k<=hi),tol=Math.max(.1,Math.min(.2,sp/4));
     const R=want.map((k,j)=>({k,a:T[k]-tol,b:Math.max(T[k]+.3,j+1<want.length?T[want[j+1]]:end),x:expect(k),pitch:0,on:0,heard:0}));
-    let prev=1,clickT=t0,beat=0;
+    let prev=1,clickT=t0,beat=0;const lat=LAT();
     playing=true;tStart=c.currentTime;btn.textContent="■ وقّف";requestAnimationFrame(raf);
     wmsg.textContent=`اعزف مع المترونوم: ${want.length} خطوة على سرعة ${rng.value}.`;
     const finish=()=>{const reach=+rng.value>=base;endWait();
       const n=R.length,s0=R.filter(s=>!s.heard).length,ok=R.filter(s=>s.pitch&&s.on).length,pn=R.filter(s=>s.pitch).length,sc=Math.round(ok/n*100),pass=sc>=80,miss=R.find(s=>!(s.pitch&&s.on));
-      if(s0>n*.3){wmsg.textContent=cantHear(s0,n);return}
+      if(s0>n*.3){wmsg.innerHTML=cantHear(s0,n);return}
+      saveExam({k:"r",sc,bpm:+rng.value,miss:R.filter(s=>!(s.pitch&&s.on)).map(s=>s.k)});
       let m=`النغمات صح: ${Math.round(pn/n*100)}% · صح وبوقتها: ${sc}%. `;
       if(!pass)m+="بدك ٨٠%. "+(pn/n>=.8?"النغمات منيحة، المشكلة بالوقت: خلّي المترونوم يقودك.":"ارجع لتمرين «٢ متوسط».");
       else if(part)m+="زبط المقطع! هلأ جرّبه كامل (ألغِ المقطع A–B).";
@@ -171,7 +183,7 @@ W.coach=(el,cfg)=>{
     Mic.listen(r=>{
       if(rex!==tok)return;if(!el.isConnected){endWait();return}
       while(clickT<end&&clickT<c.currentTime+.2){click(clickT,beat%bb===0);clickT+=sp;beat++}
-      const now=c.currentTime-LAT,onset=loud(r)&&r.rms>prev*1.35;prev=r.rms;
+      const now=c.currentTime-lat,onset=loud(r)&&r.rms>prev*1.35;prev=r.rms;
       R.forEach(s=>{if(now<s.a||now>s.b)return;if(loud(r))s.heard=1;if(matches(s.x,r,true))s.pitch=1;if(onset&&Math.abs(now-T[s.k])<=tol)s.on=1});
       if(c.currentTime>end+.4)finish();
     });
@@ -188,10 +200,14 @@ W.coach=(el,cfg)=>{
     // a track with no pressed notes is all right hand, so show the whole guitar instead of the left-hand zoom
     if(!EV.some(e=>e.c?CH[e.c].f.some(f=>f>0):(e.n||[]).some(n=>n[1]>0))){gv.mode="full";gv.cam=null;gv.chips()}
     lane=laneSVG(EV,tr.bar||4);laneEl.innerHTML=lane.s;
+    hard=tr.hard||hardSec(EV);$(".hard").hidden=!hard;
     const svg=laneEl.querySelector("svg"),r=document.createElementNS("http://www.w3.org/2000/svg","rect");
     r.setAttribute("class","abr");r.setAttribute("y",0);r.setAttribute("height",svg.getAttribute("height"));r.setAttribute("width",0);r.setAttribute("fill","var(--warn)");r.setAttribute("opacity",".18");svg.insertBefore(r,svg.firstChild);
-    show(0);
+    show(0);drawHist();
   };
+  let hard=null;
+  $(".hard").onclick=()=>{stop();if(waitOn)endWait();[A,B]=hard;abB.textContent="إلغاء المقطع";abB.classList.add("on");drawAB();show(A);
+    rng.value=Math.round((tracks[ti].bpm||60)*.6);v.textContent=rng.value;wmsg.className="wmsg";wmsg.textContent="أصعب مقطع محدّد على ٦٠% من السرعة. كرّره لحد ما يصير سهل، وبعدين ارفع السرعة.";};
   if(tracks.length>1)$(".trk").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;el.querySelectorAll(".trk .chip").forEach(x=>x.classList.toggle("on",x===b));load(+b.dataset.k)};
   btn.onclick=()=>rex?endWait():playing?stop():play();
   $(".nxt").onclick=()=>step(1);$(".prv").onclick=()=>step(-1);

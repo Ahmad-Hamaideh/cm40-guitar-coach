@@ -65,3 +65,57 @@ W.mtuner=el=>{
     });
   };
 };
+
+
+// Per-device calibration, measured once by the wizard: how late this mic hears (lat, seconds) and the room noise.
+const CAL=()=>{try{return JSON.parse(localStorage.getItem("cm40-cal"))||{}}catch(e){return {}}};
+const noteName=m=>{const n=NOTE_EN[((m%12)+12)%12];return `${NOTE_AR[n]?NOTE_AR[n]+" · ":""}${n}${Math.floor(m/12)-1}`};
+W.mcal=el=>{
+  const c0=CAL();
+  el.innerHTML=`<p class="meta calnow">${c0.lat!=null?`مضبوط من قبل: تأخير المايك ${Math.round(c0.lat*1000)} ملي ثانية.`:"لسا ما انضبط على هاد الجهاز."}</p>
+  <ol class="calsteps"><li>حط الجهاز ٣٠–٥٠ سم عن الجيتار، والغرفة هادية.</li><li>بعد ما تضغط: اسكت ثانيتين.</li><li>بعدها ٤ طقات عدّ، وبعدين <b>اعزف الوتر ٦ مفتوح مع كل طقة</b>، ٨ مرات.</li></ol>
+  <div class="ctrl"><button class="btn cgo">ابدأ الضبط</button></div><p class="wmsg cmsg"></p>`;
+  const msg=el.querySelector(".cmsg"),go=el.querySelector(".cgo");
+  go.onclick=async()=>{
+    try{await Mic.start()}catch(err){msg.textContent=micHelp(err);return}
+    go.disabled=true;const c=ac();msg.className="wmsg";msg.textContent="اسكت ثانيتين…";
+    let n=0,s=0;await new Promise(res=>Mic.listen(r=>{s+=r.rms;if(++n>=40)res()}));
+    const noise=Math.max(.004,s/n),thr=Math.max(.012,noise*2.5),sp=1;
+    let t=c.currentTime+.3;const clicks=[];for(let b=0;b<12;b++){click(t,b%4===0);if(b>=4)clicks.push(t);t+=sp}
+    msg.textContent="٤ عدّات، وبعدين اعزف الوتر ٦ مع كل طقة…";
+    const hits=[];let prev=1,last=-9;
+    await new Promise(res=>Mic.listen(r=>{const now=c.currentTime;
+      if(r.rms>thr&&r.rms>prev*1.35&&now-last>.25){hits.push({t:now,e:0});last=now}prev=r.rms;
+      // the attack counts only if low E (or its octave) follows it, so the metronome's own click is ignored
+      const h=hits[hits.length-1];if(h&&now-h.t<.35&&r.hz>0&&Math.abs(((12*Math.log2(r.hz/mf(40))%12)+18)%12-6)<.5)h.e=1;
+      if(now>t+.6)res()}));
+    Mic.stop();go.disabled=false;
+    const d=clicks.map(ct=>{const h=hits.filter(h=>h.e&&h.t>ct-.25&&h.t<ct+.5).sort((a,b)=>Math.abs(a.t-ct)-Math.abs(b.t-ct))[0];return h?h.t-ct:null}).filter(x=>x!=null).sort((a,b)=>a-b);
+    if(d.length<5){msg.textContent=`سمعت ${d.length} من ٨ بس. تأكّد إنك بتعزف الوتر ٦ (الأتخن) مع الطقة، وقرّب الجهاز، وجرّب مرة ثانية.`;return}
+    const lat=Math.min(.35,Math.max(0,d[d.length>>1]));
+    localStorage.setItem("cm40-cal",JSON.stringify({lat,noise,d:new Date().toISOString().slice(0,10)}));
+    msg.className="wmsg good";msg.textContent=`✓ انضبط. تأخير المايك: ${Math.round(lat*1000)} ملي ثانية · الضجة: ${noise<.01?"قليلة":noise<.03?"متوسطة":"عالية، الأحسن تتمرّن بمكان أهدى"}.`;
+    el.querySelector(".calnow").textContent=`مضبوط: ${Math.round(lat*1000)} ملي ثانية.`};
+};
+// Live view of what the mic hears: note, loudness against the threshold, attacks, and a chord guess.
+W.mhear=el=>{
+  el.innerHTML=`<div class="hear"><b class="mono hn">–</b><span class="meta hc"></span>
+  <div class="hbar"><i class="hl"></i><span class="ht" title="أقل من هيك بعتبره سكوت"></span></div><span class="hon">ضربة</span>
+  <div class="hchr">${NOTE_EN.map(n=>`<div><i></i><small>${n}</small></div>`).join("")}</div><p class="meta hch"></p></div>
+  <div class="ctrl"><button class="btn hgo">شغّل المايك</button></div>`;
+  const q=s=>el.querySelector(s),bars=[...el.querySelectorAll(".hchr i")],go=q(".hgo");let on=false,prev=1;
+  go.onclick=async()=>{
+    if(on){Mic.stop();on=false;go.textContent="شغّل المايك";return}
+    try{await Mic.start()}catch(err){q(".hc").textContent=micHelp(err);return}
+    on=true;go.textContent="وقّف المايك";const thr=Math.max(.012,(CAL().noise||.005)*2.5);q(".ht").style.insetInlineStart=Math.min(100,thr/.2*100)+"%";
+    Mic.listen(r=>{
+      if(!el.isConnected){Mic.stop();return}
+      const loud=r.rms>thr;q(".hl").style.width=Math.min(100,r.rms/.2*100)+"%";q(".hl").classList.toggle("on",loud);
+      q(".hon").classList.toggle("on",loud&&r.rms>prev*1.35);prev=r.rms;
+      if(loud&&r.hz>0){const m=69+12*Math.log2(r.hz/440),mr=Math.round(m);q(".hn").textContent=noteName(mr);q(".hc").textContent=`${Math.round((m-mr)*100)} سنت · ${Math.round(r.hz)} هرتز`}
+      else if(!loud){q(".hn").textContent="–";q(".hc").textContent="ساكت (أو الصوت واطي كتير)"}
+      bars.forEach((b,i)=>b.style.height=(loud?r.chroma[i]*100:0)+"%");
+      if(loud){let best=null,bs=-9;Object.keys(CH).filter(k=>!/^H/.test(k)).forEach(k=>{const pcs=new Set();CH[k].f.forEach((f,i)=>{if(f>=0)pcs.add((OPEN_MIDI[5-i]+f)%12)});let sc=0;r.chroma.forEach((v,i)=>sc+=pcs.has(i)?v:-v*.6);if(sc>bs){bs=sc;best=k}});q(".hch").textContent=`إذا عم تعزف كورد، أقرب كورد: ${best}`}
+    });
+  };
+};
